@@ -73,3 +73,16 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;letter-spacing:-.01em;line-hei
 .site a.link{color:var(--red);text-decoration:underline}
 .note{font-size:13px;color:#9b938a;margin-top:10px}
 .center{min-height:100vh;display:grid;place-items:center;color:var(--muted)}
+
+/* ---------- admin edit modal ---------- */
+.pf-overlay{position:fixed;inset:0;background:rgba(20,18,16,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
+.pf-overlay.open{display:flex}
+.pf-modal.light{background:#fff;color:var(--ink);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:14px;padding:26px 28px;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.pf-modal.light h3{font-family:var(--serif);font-size:26px;margin-bottom:6px}
+.pf-close{position:absolute;top:16px;right:18px;background:none;border:none;font-size:24px;color:var(--muted);cursor:pointer;line-height:1}
+.grp{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);font-weight:600;margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:540px){.r2{grid-template-columns:1fr}}
+.actionbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 4px}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.5}
+.foot2{display:flex;gap:10px;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
