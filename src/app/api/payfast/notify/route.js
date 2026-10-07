@@ -63,7 +63,7 @@ export async function POST(request) {
       patch.discount_code = code;
       try { patch.woo_coupon_id = await createCoupon({ code, percent: Number(process.env.DISCOUNT_PERCENT || '10') }); }
       catch (e) { console.error('woo coupon failed', e); }
-      try { await addToAudience({ email, name: member.name, discountCode: code, tier }); patch.mailchimp_added = true; }
+      try { await addToAudience({ email, name: member.name, discountCode: code, tier, seats: member.seats }); patch.mailchimp_added = true; }
       catch (e) { console.error('mailchimp add failed', e); }
     }
     await db.from('members').update(patch).eq('id', member.id);

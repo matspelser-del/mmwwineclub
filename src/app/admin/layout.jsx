@@ -24,7 +24,12 @@ export default function AdminLayout({ children }) {
       <aside className="sidebar">
         <div className="brand"><img src="/logo-red.png" alt="Miles Mossop Wines" /></div>
         <div style={{ fontSize: 11, color: 'var(--muted)', padding: '0 6px 14px', letterSpacing: '.12em', textTransform: 'uppercase' }}>Wine Club</div>
-        <nav className="nav"><a className="active" href="/admin">Subscriptions</a></nav>
+        <nav className="nav">
+          <a href="/admin">Subscriptions</a>
+          <a href="/admin/boxes">Boxes & Events</a>
+          <a href="/admin/builder">Box Builder</a>
+          <a href="/admin/comms">Communications</a>
+        </nav>
         <div className="foot"><button onClick={signOut}>Sign out</button></div>
       </aside>
       <main className="main">{children}</main>

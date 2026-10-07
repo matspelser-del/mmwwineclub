@@ -86,3 +86,20 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;letter-spacing:-.01em;line-hei
 .actionbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 4px}
 .hint{font-size:12.5px;color:var(--muted);line-height:1.5}
 .foot2{display:flex;gap:10px;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+
+/* ---------- boxes & events ---------- */
+.boxgrid{display:grid;grid-template-columns:1fr;gap:12px;max-width:760px}
+.boxcard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.boxcard-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;cursor:pointer}
+.boxcard-top:hover{background:#fbfafa}
+.boxcard-label{font-family:var(--serif);font-size:20px;font-weight:500}
+.boxcard-body{padding:4px 18px 18px;border-top:1px solid var(--line)}
+.timeline{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.tl-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.tl-row .x{margin-left:4px}
+.tl-add{display:grid;grid-template-columns:1fr auto auto;gap:8px}
+@media(max-width:560px){.tl-add{grid-template-columns:1fr}}
+
+/* ---------- box builder ---------- */
+.builder{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.builder{grid-template-columns:1fr}}

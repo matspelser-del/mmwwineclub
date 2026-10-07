@@ -22,7 +22,7 @@ export async function POST(request) {
   // Lunch seat cap (32 total). Count seats already committed, excluding this email if re-trying.
   const LUNCH_LIMIT = 32;
   if (t.tier === 'lunch') {
-    const { data: lunchRows } = await db.from('members').select('email,seats,status').eq('tier','lunch').in('status',['active','pending']);
+    const { data: lunchRows } = await db.from('members').select('email,seats,status').eq('tier','lunch').in('status',['active']);
     const taken = (lunchRows||[]).filter(r => r.email !== email).reduce((a,r)=> a + (Number(r.seats)||0), 0);
     if (taken + t.seats > LUNCH_LIMIT) {
       const left = Math.max(0, LUNCH_LIMIT - taken);

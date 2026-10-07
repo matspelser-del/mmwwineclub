@@ -13,6 +13,7 @@ export default function Account() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [boxes, setBoxes] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -24,6 +25,7 @@ export default function Account() {
       const j = await res.json();
       if (j.isAdmin) { router.replace('/admin'); return; }
       setMember(j.member);
+      fetch('/api/member/boxes', { headers: { Authorization: `Bearer ${t}` } }).then(r=>r.json()).then(d=>setBoxes(d.boxes||[])).catch(()=>{});
       if (j.member) setForm({ ...BLANK, ...Object.fromEntries(Object.keys(BLANK).map((k) => [k, j.member[k] || BLANK[k]])) });
       setLoading(false);
     })();
@@ -84,6 +86,20 @@ export default function Account() {
                 <div><label className="field">Province</label><input className="input" value={form.province} onChange={(e) => set('province', e.target.value)} /></div>
               </div>
               <button className="btn" onClick={saveAddress} disabled={saving}>{saving ? 'Saving…' : 'Save address'}</button>
+            </div>
+
+            <h2>Upcoming boxes</h2>
+            <div className="dark-card">
+              {boxes.length === 0 ? <p className="muted">The schedule will appear here soon.</p> :
+                boxes.map((b) => (
+                  <div key={b.id} style={{ display:'flex', justifyContent:'space-between', gap:12, padding:'10px 0', borderBottom:'1px solid #2c2a27' }}>
+                    <div>
+                      <b style={{ color:'#efeae3' }}>{b.label}</b>
+                      {b.member_note ? <div className="muted" style={{ fontSize:13, marginTop:2 }}>{b.member_note}</div> : null}
+                    </div>
+                    <span className="muted" style={{ fontSize:13, whiteSpace:'nowrap', textTransform:'capitalize' }}>{b.status}</span>
+                  </div>
+                ))}
             </div>
 
             <h2>Manage your subscription</h2>
