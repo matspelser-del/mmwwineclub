@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { rand, shortDate } from '@/lib/format';
+import DashboardSkeleton from '@/components/Skeleton';
+import CountUp from '@/components/CountUp';
 
 // Payfast card-update base. The exact URL isn't published, so this is configurable
 // and must be verified in sandbox before relying on it.
@@ -15,7 +17,7 @@ function Donut({ club, lunch }) {
       <svg width="140" height="140" viewBox="0 0 140 140">
         <circle cx="70" cy="70" r={R} fill="none" stroke="#efeae3" strokeWidth={sw}/>
         {seg(club,0,'#3a6491')}{seg(lunch,club,'#952B2A')}
-        <text x="70" y="66" textAnchor="middle" fontSize="26" fontWeight="500" fill="#1a1a1a" fontFamily="Cormorant Garamond, serif">{total}</text>
+        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="700" fill="#1a1a1a" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
         <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#77736e">active</text>
       </svg>
       <div style={{display:'flex',flexDirection:'column',gap:10}}>
@@ -97,7 +99,7 @@ export default function AdminHome() {
   const portalUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const cardLink = form.payfast_token ? `${CARD_BASE}/${form.payfast_token}` : '';
 
-  if (loading) return <div className="head"><p className="empty">Loading…</p></div>;
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <>
@@ -106,11 +108,11 @@ export default function AdminHome() {
         <button className="btn" onClick={openNew}>+ Add member</button>
       </div>
 
-      <div className="stats">
-        <div className="stat"><div className="l">Active members</div><div className="v">{active.length}</div></div>
-        <div className="stat"><div className="l">Paused</div><div className="v">{paused.length}</div></div>
+      <div className="stats stagger">
+        <div className="stat"><div className="l">Active members</div><div className="v"><CountUp value={active.length} /></div></div>
+        <div className="stat"><div className="l">Paused</div><div className="v"><CountUp value={paused.length} /></div></div>
         <div className="stat"><div className="l">Payments received</div><div className="v">{rand(revenue)}</div></div>
-        <div className="stat"><div className="l">Requests to action</div><div className="v">{pendingReq.length}</div></div>
+        <div className="stat"><div className="l">Requests to action</div><div className="v"><CountUp value={pendingReq.length} /></div></div>
       </div>
 
       {active.length > 0 && (

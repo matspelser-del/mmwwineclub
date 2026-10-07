@@ -71,7 +71,7 @@ export default function Builder(){
       turnover:BOX_PRICE*n, totalCostAll:totalCost*n, totalProfit:profit*n};
   },[rows,box,members]);
 
-  if(loading) return <div className="head"><p className="empty">Loading…</p></div>;
+  if(loading) return <div className="loader-full" style={{minHeight:'50vh'}}><div className="session-spinner" /></div>;
 
   return (
     <>

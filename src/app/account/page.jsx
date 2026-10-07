@@ -49,7 +49,7 @@ export default function Account() {
   }
   async function signOut() { await supabase.auth.signOut(); router.replace('/login'); }
 
-  if (loading) return <div className="center">Loading…</div>;
+  if (loading) return <div className="loader-full"><div className="session-spinner" /></div>;
 
   return (
     <div className="site">

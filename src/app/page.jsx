@@ -15,5 +15,5 @@ export default function Home() {
       router.replace(j.isAdmin ? '/admin' : '/account');
     })();
   }, [router]);
-  return <div className="center">Loading…</div>;
+  return <div className="loader-full"><div className="session-spinner" /></div>;
 }

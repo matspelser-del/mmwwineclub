@@ -20,7 +20,7 @@ export default function AdminLayout({ children }) {
     })();
   }, [router]);
   async function signOut() { await supabase.auth.signOut(); router.replace('/login'); }
-  if (!ok) return <div className="center">Loading…</div>;
+  if (!ok) return <div className="loader-full"><div className="session-spinner" /></div>;
   return (
     <div className="shell">
       <aside className="sidebar">
