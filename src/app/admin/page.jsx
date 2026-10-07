@@ -7,6 +7,25 @@ import { rand, shortDate } from '@/lib/format';
 // and must be verified in sandbox before relying on it.
 const CARD_BASE = process.env.NEXT_PUBLIC_PAYFAST_CARD_UPDATE_BASE || 'https://payment.payfast.io/eng/recurring/update';
 
+function Donut({ club, lunch }) {
+  const total = club + lunch; const R=52, C=2*Math.PI*R, sw=18;
+  const seg=(val,off,color)=> total? <circle cx="70" cy="70" r={R} fill="none" stroke={color} strokeWidth={sw} strokeDasharray={`${val/total*C} ${C-val/total*C}`} strokeDashoffset={-off/total*C} transform="rotate(-90 70 70)"/> : null;
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r={R} fill="none" stroke="#efeae3" strokeWidth={sw}/>
+        {seg(club,0,'#3a6491')}{seg(lunch,club,'#952B2A')}
+        <text x="70" y="66" textAnchor="middle" fontSize="26" fontWeight="500" fill="#1a1a1a" fontFamily="Cormorant Garamond, serif">{total}</text>
+        <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#77736e">active</text>
+      </svg>
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#3a6491'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#952B2A'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b></div>
+      </div>
+    </div>
+  );
+}
+
 function Badge({ v }) {
   const map = { active:'green', paused:'amber', cancelled:'grey', pending:'blue' };
   return <span className={`badge ${map[v]||'grey'}`}><span className="dot" />{v}</span>;
@@ -37,6 +56,8 @@ export default function AdminHome() {
   const active = members.filter((m) => m.status === 'active');
   const paused = members.filter((m) => m.status === 'paused');
   const revenue = (data.payments || []).filter((p) => p.status === 'complete').reduce((s, p) => s + Number(p.amount || 0), 0);
+  const clubActive = active.filter((m)=>m.tier!=='lunch').length;
+  const lunchActive = active.filter((m)=>m.tier==='lunch').length;
   const pendingReq = (data.events || []).filter((e) => e.outcome === 'pending' || e.outcome === 'no_token');
 
   const filtered = useMemo(() => members.filter((m) =>
@@ -92,6 +113,13 @@ export default function AdminHome() {
         <div className="stat"><div className="l">Requests to action</div><div className="v">{pendingReq.length}</div></div>
       </div>
 
+      {active.length > 0 && (
+        <div className="card pad" style={{ marginBottom: 18, maxWidth: 420 }}>
+          <h3>Active members by tier</h3>
+          <Donut club={clubActive} lunch={lunchActive} />
+        </div>
+      )}
+
       <input className="input search" placeholder="Search name, email, town, code…" value={q} onChange={(e)=>setQ(e.target.value)} />
 
       <div className="card">
@@ -119,7 +147,7 @@ export default function AdminHome() {
               <L t="Email"><input className="input" value={form.email} onChange={(e)=>set('email',e.target.value)} /></L></div>
             <div className="r2"><L t="Phone"><input className="input" value={form.phone} onChange={(e)=>set('phone',e.target.value)} /></L>
               <L t="Status"><select className="select" value={form.status} onChange={(e)=>set('status',e.target.value)}>
-                <option value="active">active</option><option value="pending">pending</option><option value="paused">paused</option><option value="cancelled">cancelled</option></select></L></div>
+                <option value="active">Active</option><option value="pending">Pending</option><option value="paused">Paused</option><option value="cancelled">Cancelled</option></select></L></div>
             <L t="Membership">
               <select className="select"
                 value={form.tier==='club' ? 'club' : (Number(form.seats)>=2 ? 'lunch2' : 'lunch1')}

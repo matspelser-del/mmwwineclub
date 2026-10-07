@@ -65,7 +65,7 @@ export default function Boxes(){
                   <div className="r2">
                     <label><span className="field">Status</span>
                       <select className="select" value={b.status} onChange={e=>patchBox(b.id,{status:e.target.value})}>
-                        {STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+                        {STATUSES.map(s=><option key={s} value={s}>{s[0].toUpperCase()+s.slice(1)}</option>)}
                       </select></label>
                     <label><span className="field">Release date</span>
                       <input className="input" type="date" value={b.release_date||''} onChange={e=>patchBox(b.id,{release_date:e.target.value})} /></label>
