@@ -32,7 +32,7 @@ function Form() {
     const origin = window.location.origin;
     const parts = f.name.trim().split(' ');
     const fields = {
-      merchant_id: MERCHANT_ID, merchant_key: '',   // key not required for onsite buttons
+      cmd: '_paynow', receiver: MERCHANT_ID,          // Pay Now button mode (same as the website buttons)
       return_url: `${origin}/account`, cancel_url: `${origin}/signup`,
       name_first: parts[0] || '', name_last: parts.slice(1).join(' '),
       email_address: f.email, cell_number: f.phone,
@@ -79,10 +79,7 @@ function Form() {
           <div><label className="field">City / town *</label><input className="input" value={f.city} onChange={(e)=>set('city',e.target.value)} required /></div>
           <div><label className="field">Province</label><input className="input" value={f.province} onChange={(e)=>set('province',e.target.value)} /></div>
         </div>
-        <div className="row2">
-          <div><label className="field">Postal code *</label><input className="input" value={f.postal_code} onChange={(e)=>set('postal_code',e.target.value)} required /></div>
-          <div><label className="field">Country</label><input className="input" value={f.country} onChange={(e)=>set('country',e.target.value)} /></div>
-        </div>
+        <div><label className="field">Postal code *</label><input className="input" value={f.postal_code} onChange={(e)=>set('postal_code',e.target.value)} required /></div>
       </div>
 
       {err && <p className="note" style={{ color:'#d98b88' }}>{err}</p>}

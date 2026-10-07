@@ -5,7 +5,7 @@ import { rand, shortDate } from '@/lib/format';
 
 // Payfast card-update base. The exact URL isn't published, so this is configurable
 // and must be verified in sandbox before relying on it.
-const CARD_BASE = process.env.NEXT_PUBLIC_PAYFAST_CARD_UPDATE_BASE || 'https://www.payfast.co.za/eng/recurring/update';
+const CARD_BASE = process.env.NEXT_PUBLIC_PAYFAST_CARD_UPDATE_BASE || 'https://payment.payfast.io/eng/recurring/update';
 
 function Badge({ v }) {
   const map = { active:'green', paused:'amber', cancelled:'grey', pending:'blue' };
@@ -120,17 +120,24 @@ export default function AdminHome() {
             <div className="r2"><L t="Phone"><input className="input" value={form.phone} onChange={(e)=>set('phone',e.target.value)} /></L>
               <L t="Status"><select className="select" value={form.status} onChange={(e)=>set('status',e.target.value)}>
                 <option value="active">active</option><option value="pending">pending</option><option value="paused">paused</option><option value="cancelled">cancelled</option></select></L></div>
-            <div className="r2"><L t="Tier"><select className="select" value={form.tier} onChange={(e)=>set('tier',e.target.value)}>
-                <option value="club">The Club</option><option value="lunch">Club + Launch Lunch</option></select></L>
-              <L t="Lunch seats"><input className="input" type="number" min="1" value={form.seats} onChange={(e)=>set('seats',e.target.value)} /></L></div>
+            <L t="Membership">
+              <select className="select"
+                value={form.tier==='club' ? 'club' : (Number(form.seats)>=2 ? 'lunch2' : 'lunch1')}
+                onChange={(e)=>{ const v=e.target.value;
+                  if(v==='club'){ set('tier','club'); set('seats',1); }
+                  else if(v==='lunch1'){ set('tier','lunch'); set('seats',1); }
+                  else { set('tier','lunch'); set('seats',2); } }}>
+                <option value="club">The Family Wine Club</option>
+                <option value="lunch1">Club + Launch Lunch (1 seat)</option>
+                <option value="lunch2">Club + Launch Lunch (2 seats)</option>
+              </select></L>
 
             <div className="grp">Delivery address</div>
             <L t="Address line 1"><input className="input" value={form.addr_line1} onChange={(e)=>set('addr_line1',e.target.value)} /></L>
             <L t="Address line 2"><input className="input" value={form.addr_line2} onChange={(e)=>set('addr_line2',e.target.value)} /></L>
             <div className="r2"><L t="City / town"><input className="input" value={form.city} onChange={(e)=>set('city',e.target.value)} /></L>
               <L t="Province"><input className="input" value={form.province} onChange={(e)=>set('province',e.target.value)} /></L></div>
-            <div className="r2"><L t="Postal code"><input className="input" value={form.postal_code} onChange={(e)=>set('postal_code',e.target.value)} /></L>
-              <L t="Country"><input className="input" value={form.country} onChange={(e)=>set('country',e.target.value)} /></L></div>
+            <L t="Postal code"><input className="input" value={form.postal_code} onChange={(e)=>set('postal_code',e.target.value)} /></L>
 
             <div className="grp">Payfast & billing</div>
             <L t="Payfast subscription token (needed to pause / cancel / card update)">
