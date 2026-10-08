@@ -41,6 +41,8 @@ function Form() {
     const fields = {
       cmd: '_paynow', receiver: RECEIVER,          // Pay Now button mode (same as the website buttons)
       return_url: `${origin}/account`, cancel_url: `${origin}/signup`,
+      notify_url: `${origin}/api/payfast/notify`,  // belt-and-braces; also set the ITN URL in Payfast settings
+
       name_first: parts[0] || '', name_last: parts.slice(1).join(' '),
       email_address: f.email, cell_number: f.phone,
       m_payment_id: f.email,

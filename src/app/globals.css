@@ -54,6 +54,31 @@ h1,h2,h3{font-family:var(--serif);font-weight:700;letter-spacing:-.02em;line-hei
 .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--bg);padding:2px 7px;border-radius:5px}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .search{max-width:300px;margin-bottom:18px}
+.mobile-topbar{display:none}
+.drawer-scrim{display:none}
+.hamburger{display:inline-flex;flex-direction:column;justify-content:center;gap:4px;width:38px;height:38px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;padding:0 9px}
+.hamburger span{display:block;height:2px;background:var(--ink);border-radius:2px}
+
+/* ---------- admin responsive: sidebar becomes a drawer ---------- */
+@media(max-width:860px){
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:40;transform:translateX(-100%);transition:transform .22s ease;box-shadow:none}
+  .sidebar.open{transform:translateX(0);box-shadow:12px 0 34px rgba(0,0,0,.18)}
+  .mobile-topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:20}
+  .drawer-scrim.open{display:block;position:fixed;inset:0;background:rgba(20,18,16,.4);z-index:30}
+  .shell{display:block}
+  .main{padding:20px 16px 44px}
+}
+.subs .row,.subs .rowh{transition:background .12s ease}
+@media(max-width:700px){
+  .subs .rowh{display:none}
+  .subs .row{grid-template-columns:1fr 1fr!important;gap:6px 14px;padding:15px 16px}
+  .subs .row>div:first-child{grid-column:1 / -1}
+  .subs .row .sub{font-size:12px}
+}
+@media(max-width:420px){
+  .subs .row{grid-template-columns:1fr!important}
+}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
 /* ---------- editorial (dark) : login + member ---------- */
 .site{min-height:100vh;background:#141414;color:#efeae3;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
@@ -72,6 +97,7 @@ h1,h2,h3{font-family:var(--serif);font-weight:700;letter-spacing:-.02em;line-hei
 .site .btn.ghost{color:#efeae3;border-color:#34312d}
 .site .btn.ghost:hover{background:#242220}
 .site .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.site .row2{grid-template-columns:1fr}}
 .site .code{background:#141414;color:#efeae3}
 .site a.link{color:var(--red);text-decoration:underline}
 .note{font-size:13px;color:#9b938a;margin-top:10px}
@@ -103,9 +129,31 @@ h1,h2,h3{font-family:var(--serif);font-weight:700;letter-spacing:-.02em;line-hei
 .tl-add{display:grid;grid-template-columns:1fr auto auto;gap:8px}
 @media(max-width:560px){.tl-add{grid-template-columns:1fr}}
 
+/* ---------- shared utilities (were missing -> cramped cards) ---------- */
+.pad{padding:22px}
+.rows{display:block}
+.r{display:flex;align-items:center;justify-content:flex-end;text-align:right}
+.x{background:none;border:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .12s ease,background .12s ease}
+.x:hover{color:var(--red);background:var(--red-soft)}
+
 /* ---------- box builder ---------- */
 .builder{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
 @media(max-width:900px){.builder{grid-template-columns:1fr}}
+.builder-left{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* wine picker */
+.pickbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.catalogue{display:flex;flex-direction:column;gap:6px;margin:4px 0 6px}
+.wine-pick{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 14px;cursor:pointer;transition:border-color .12s ease,background .12s ease}
+.wine-pick:hover{border-color:var(--red);background:#fdfbfb}
+.wp-name{font-weight:600;font-size:14px}
+.wp-meta{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.wp-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.wp-price{font-size:14px;font-weight:600}
+.wp-add{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--red-soft);color:var(--red);font-size:17px;font-weight:600;line-height:1;transition:background .12s ease,color .12s ease}
+.wine-pick:hover .wp-add{background:var(--red);color:#fff}
+.wp-inbox{font-size:11px;font-weight:600;color:var(--green);background:var(--green-soft);padding:2px 9px;border-radius:999px;white-space:nowrap}
+.catalogue-empty{color:var(--muted);font-size:13px;padding:10px 2px}
 
 /* ---------- loaders + motion (from OVP) ---------- */
 @keyframes spin{to{transform:rotate(360deg)}}

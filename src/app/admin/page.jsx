@@ -42,6 +42,7 @@ export default function AdminHome() {
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState(null); // member object, {} for new, or null
   const [form, setForm] = useState(BLANK);
+  const [onboarding, setOnboarding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -94,7 +95,21 @@ export default function AdminHome() {
     else if (j.outcome === 'no_token') setMsg('No Payfast token saved for this member, add it first, then try again.');
     else setMsg('Payfast did not confirm. Logged as a pending request, action it in Payfast if needed.');
   }
-  function copy(text, label) { navigator.clipboard?.writeText(text); setMsg(`${label} copied.`); }
+  function copy(text, label) { navigator.clipboard?.writeText(text); setMsg(`✓ ${label} copied.`); }
+
+  async function onboard() {
+    if (!editing?.id) return;
+    if (!window.confirm('Run the welcome pipeline? This generates the discount code, creates the WooCommerce coupon, and adds the member to Mailchimp - which sends the welcome email.')) return;
+    setOnboarding(true); setMsg('');
+    const res = await fetch('/api/admin/onboard', { method:'POST', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ id: editing.id }) });
+    const j = await res.json().catch(()=>({}));
+    setOnboarding(false);
+    if (res.ok) {
+      setMsg(`✓ Welcome run - discount: ${j.steps.discount}; coupon: ${j.steps.coupon}; Mailchimp: ${j.steps.mailchimp}.`);
+      if (j.code) setForm((f)=>({ ...f, discount_code: j.code }));
+      load();
+    } else setMsg(j.error || 'Onboarding failed');
+  }
 
   const portalUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const cardLink = form.payfast_token ? `${CARD_BASE}/${form.payfast_token}` : '';
@@ -103,7 +118,7 @@ export default function AdminHome() {
 
   return (
     <>
-      <div className="head" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end' }}>
+      <div className="head" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:12 }}>
         <div><h1>Subscriptions</h1><p>{members.length} members · {active.length} active</p></div>
         <button className="btn" onClick={openNew}>+ Add member</button>
       </div>
@@ -124,7 +139,7 @@ export default function AdminHome() {
 
       <input className="input search" placeholder="Search name, email, town, code…" value={q} onChange={(e)=>setQ(e.target.value)} />
 
-      <div className="card">
+      <div className="card subs">
         <div className="rowh"><div>Member</div><div>Delivery address</div><div>Tier</div><div>Status</div><div>Started · code</div></div>
         {filtered.length === 0 ? <div className="empty">No members yet.</div> :
           filtered.map((m) => (
@@ -196,9 +211,20 @@ export default function AdminHome() {
               </>
             )}
 
+            {editing.id && (
+              <>
+                <div className="grp">Welcome &amp; discount</div>
+                <p className="hint">For a member added by hand, or whose payment never reached the app (old customer, stale page). Generates the discount code, creates the WooCommerce coupon, and adds them to Mailchimp so the welcome email fires. Safe to run once; re-running reuses the existing code and won't duplicate the coupon.</p>
+                <div className="actionbar">
+                  <button className="btn sm" onClick={onboard} disabled={onboarding}>{onboarding?'Running…':(form.discount_code?'Re-send welcome':'Onboard & send welcome')}</button>
+                  {form.discount_code && <span className="hint">Current code: <span className="code">{form.discount_code}</span></span>}
+                </div>
+              </>
+            )}
+
             <L t="Notes"><textarea className="input" rows="2" value={form.notes} onChange={(e)=>set('notes',e.target.value)} /></L>
 
-            {msg && <p className="hint" style={{ color:'var(--red)' }}>{msg}</p>}
+            {msg && <p className="hint" style={{ color: msg.startsWith('✓')?'var(--green)':'var(--red)' }}>{msg}</p>}
 
             <div className="foot2">
               {editing.id ? <button className="btn ghost sm" onClick={removeMember} style={{ marginRight:'auto', color:'var(--red)' }}>Delete</button> : <span style={{ marginRight:'auto' }} />}
