@@ -10,17 +10,34 @@ export default function Boxes(){
   const [token,setToken]=useState(null);
   const [boxes,setBoxes]=useState([]);
   const [timeline,setTimeline]=useState([]);
+  const [items,setItems]=useState([]);
+  const [skips,setSkips]=useState([]);
   const [loading,setLoading]=useState(true);
   const [open,setOpen]=useState(null);         // box id expanded
   const [nt,setNt]=useState({});               // new timeline inputs per box
+  const [notifying,setNotifying]=useState(null);
+  const [notifyMsg,setNotifyMsg]=useState({}); // per-box result
 
   async function load(){
     const { data:s }=await supabase.auth.getSession(); const t=s.session?.access_token; setToken(t);
     const res=await fetch('/api/admin/boxes',{headers:{Authorization:`Bearer ${t}`}});
     const j=await res.json();
-    setBoxes(j.boxes||[]); setTimeline(j.timeline||[]); setLoading(false);
+    setBoxes(j.boxes||[]); setTimeline(j.timeline||[]); setItems(j.items||[]); setSkips(j.skips||[]); setLoading(false);
   }
   useEffect(()=>{ load(); },[]);
+
+  async function patchItem(id,patch){
+    setItems(it=>it.map(x=>x.id===id?{...x,...patch}:x));
+    await fetch('/api/admin/box-items',{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
+  }
+  async function notifyShipped(boxId){
+    if(!window.confirm('Tag every active member so your "Box On Its Way" email sends? Members who skipped this box are left out.')) return;
+    setNotifying(boxId);
+    const res=await fetch('/api/admin/notify-box',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({box_id:boxId})});
+    const j=await res.json().catch(()=>({}));
+    setNotifying(null);
+    setNotifyMsg(m=>({...m,[boxId]: res.ok ? `Tagged ${j.sent} member${j.sent===1?'':'s'}.${j.failed?.length?` ${j.failed.length} failed.`:''}` : (j.error||'Could not notify')}));
+  }
 
   async function patchBox(id,patch){
     await fetch('/api/admin/boxes',{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
@@ -49,6 +66,8 @@ export default function Boxes(){
         {boxes.map(b=>{
           const mine=timeline.filter(t=>t.box_id===b.id);
           const done=mine.filter(m=>m.done).length;
+          const wines=items.filter(i=>i.box_id===b.id);
+          const bottles=wines.filter(w=>w.kind==='wine').reduce((s,w)=>s+Number(w.qty||0),0);
           const isOpen=open===b.id;
           return (
             <div className="boxcard" key={b.id}>
@@ -72,6 +91,35 @@ export default function Boxes(){
                   </div>
                   <label style={{display:'block',marginTop:10}}><span className="field">Note shown to members (no spoilers / no prices)</span>
                     <textarea className="input" rows="2" defaultValue={b.member_note||''} onBlur={e=>patchBox(b.id,{member_note:e.target.value})} /></label>
+
+                  <div className="grp" style={{display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
+                    <span>The line-up{bottles?` · ${bottles} ${bottles===1?'bottle':'bottles'}`:''}</span>
+                    <a href="/admin/builder" className="hint" style={{color:'var(--red)',fontWeight:600,textTransform:'none',letterSpacing:0}}>Edit in Box Builder →</a>
+                  </div>
+                  {wines.length===0
+                    ? <p className="hint">Nothing built yet. Add wines in the Box Builder and they show here.</p>
+                    : <div className="lineup">{wines.map(w=>(
+                        <div key={w.id} style={{padding:'10px 0',borderBottom:'1px solid var(--line)'}}>
+                          <div style={{display:'flex',justifyContent:'space-between',gap:10}}>
+                            <span style={{fontWeight:600}}>{w.name}{w.kind==='extra'?' (extra)':''}{w.vintage?` · ${w.vintage}`:''}</span>
+                            <span className="sub">×{w.qty}</span>
+                          </div>
+                          <input className="input" style={{marginTop:6,fontSize:13,padding:'7px 10px'}} placeholder="Tasting note (shown to members on the reveal)" defaultValue={w.tasting_note||''} onBlur={e=>patchItem(w.id,{tasting_note:e.target.value})} />
+                        </div>
+                      ))}</div>}
+
+                  {(b.status==='shipped'||b.status==='done') && (
+                    <div style={{marginTop:14,padding:'14px 16px',background:'var(--bg)',border:'1px solid var(--line)',borderRadius:12}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontWeight:600,fontSize:14}}>Tell members it's on its way</div>
+                          <div className="hint">Tags active members so your "Box On Its Way" email sends.{skips.filter(s=>s.box_id===b.id).length?` ${skips.filter(s=>s.box_id===b.id).length} skipped this box.`:''}</div>
+                        </div>
+                        <button className="btn sm" onClick={()=>notifyShipped(b.id)} disabled={notifying===b.id}>{notifying===b.id?'Sending…':'Notify members'}</button>
+                      </div>
+                      {notifyMsg[b.id] && <p className="hint" style={{marginTop:8,color:'var(--green)'}}>{notifyMsg[b.id]}</p>}
+                    </div>
+                  )}
 
                   <div className="grp">Timeline</div>
                   <div className="timeline">

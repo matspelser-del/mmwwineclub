@@ -4,6 +4,9 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 const BLANK = { name:'', phone:'', addr_line1:'', addr_line2:'', city:'', province:'', postal_code:'', country:'South Africa' };
+const SHOP_URL = process.env.NEXT_PUBLIC_SHOP_URL || '';
+// member-friendly words for internal box statuses
+const STATUS_LABEL = { confirmed:'Confirmed', packing:'Being packed', shipped:'On its way', done:'Delivered' };
 
 export default function Account() {
   const router = useRouter();
@@ -13,7 +16,9 @@ export default function Account() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [boxes, setBoxes] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [past, setPast] = useState([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -25,7 +30,7 @@ export default function Account() {
       const j = await res.json();
       if (j.isAdmin) { router.replace('/admin'); return; }
       setMember(j.member);
-      fetch('/api/member/boxes', { headers: { Authorization: `Bearer ${t}` } }).then(r=>r.json()).then(d=>setBoxes(d.boxes||[])).catch(()=>{});
+      fetch('/api/member/boxes', { headers: { Authorization: `Bearer ${t}` } }).then(r=>r.json()).then(d=>{ setUpcoming(d.upcoming||[]); setPast(d.past||[]); }).catch(()=>{});
       if (j.member) setForm({ ...BLANK, ...Object.fromEntries(Object.keys(BLANK).map((k) => [k, j.member[k] || BLANK[k]])) });
       setLoading(false);
     })();
@@ -46,6 +51,15 @@ export default function Account() {
     const j = await res.json();
     if (j.ok && j.outcome === 'done') { setMsg(`Your membership has been ${label === 'resume' ? 'resumed' : label + 'd'}.`); setMember((m) => ({ ...m, status: action === 'cancel' ? 'cancelled' : action === 'pause' ? 'paused' : 'active' })); }
     else setMsg(`Your ${label} request has been received. We'll confirm it shortly.`);
+  }
+  async function toggleSkip(boxId, skip) {
+    setUpcoming((bs) => bs.map((b) => b.id === boxId ? { ...b, skipped: skip } : b));
+    await fetch('/api/member/skip', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ boxId, skip }) }).catch(() => {});
+  }
+  function copyCode() {
+    if (!member?.discount_code) return;
+    navigator.clipboard?.writeText(member.discount_code);
+    setCopied(true); setTimeout(() => setCopied(false), 1800);
   }
   async function signOut() { await supabase.auth.signOut(); router.replace('/login'); }
 
@@ -68,7 +82,12 @@ export default function Account() {
                 Status: <b style={{ color: '#efeae3', textTransform: 'capitalize' }}>{member.status}</b>
                 {member.start_date ? ` · member since ${new Date(member.start_date).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })}` : ''}
               </p>
-              {member.discount_code && <p className="muted">Your member discount code: <span className="code">{member.discount_code}</span></p>}
+              {member.discount_code && (
+                <p className="muted" style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                  Your member discount code: <span className="code">{member.discount_code}</span>
+                  <button className="btn ghost sm" onClick={copyCode} style={{ padding:'4px 12px' }}>{copied ? 'Copied' : 'Copy'}</button>
+                </p>
+              )}
             </div>
 
             <h2>Delivery address</h2>
@@ -90,17 +109,59 @@ export default function Account() {
 
             <h2>Upcoming boxes</h2>
             <div className="dark-card">
-              {boxes.length === 0 ? <p className="muted">The schedule will appear here soon.</p> :
-                boxes.map((b) => (
-                  <div key={b.id} style={{ display:'flex', justifyContent:'space-between', gap:12, padding:'10px 0', borderBottom:'1px solid #2c2a27' }}>
-                    <div>
-                      <b style={{ color:'#efeae3' }}>{b.label}</b>
-                      {b.member_note ? <div className="muted" style={{ fontSize:13, marginTop:2 }}>{b.member_note}</div> : null}
+              {upcoming.length === 0 ? <p className="muted">The schedule will appear here soon.</p> :
+                upcoming.map((b) => (
+                  <div key={b.id} style={{ padding:'12px 0', borderBottom:'1px solid #2c2a27' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', gap:12 }}>
+                      <div style={{ minWidth:0 }}>
+                        <b style={{ color: b.skipped ? '#8f877c' : '#efeae3' }}>{b.label}</b>
+                        {b.member_note ? <div className="muted" style={{ fontSize:13, marginTop:2 }}>{b.member_note}</div> : null}
+                      </div>
+                      <span className="muted" style={{ fontSize:13, whiteSpace:'nowrap' }}>{b.skipped ? 'Skipped' : (STATUS_LABEL[b.status] || '')}</span>
                     </div>
-                    <span className="muted" style={{ fontSize:13, whiteSpace:'nowrap', textTransform:'capitalize' }}>{b.status}</span>
+                    {member.status === 'active' && (
+                      <button className="btn ghost sm" style={{ marginTop:10, padding:'6px 14px' }} onClick={() => toggleSkip(b.id, !b.skipped)}>
+                        {b.skipped ? 'Un-skip this box' : 'Skip this box'}
+                      </button>
+                    )}
                   </div>
                 ))}
             </div>
+
+            {past.length > 0 && (
+              <>
+                <h2>Past boxes</h2>
+                <div className="dark-card">
+                  {past.map((b) => (
+                    <div key={b.id} style={{ padding:'4px 0 16px', borderBottom:'1px solid #2c2a27', marginBottom:14 }}>
+                      <b style={{ color:'#efeae3' }}>{b.label} edition</b>
+                      {b.wines.length === 0 ? <p className="muted" style={{ fontSize:13, marginTop:6 }}>Line-up coming soon.</p> :
+                        <div style={{ marginTop:8 }}>
+                          {b.wines.map((w, i) => (
+                            <div key={i} style={{ padding:'7px 0', borderTop: i ? '1px solid #242220' : 'none' }}>
+                              <span style={{ color:'#efeae3' }}>{w.qty > 1 ? `${w.qty} × ` : '1 × '}{w.name}{w.vintage ? ` ${w.vintage}` : ''}{w.kind === 'extra' ? ' (extra)' : ''}</span>
+                              {w.tasting_note ? <div className="muted" style={{ fontSize:13, marginTop:2 }}>{w.tasting_note}</div> : null}
+                            </div>
+                          ))}
+                        </div>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {SHOP_URL && (
+              <>
+                <h2>Shop our wines</h2>
+                <div className="dark-card" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:14, flexWrap:'wrap' }}>
+                  <div style={{ minWidth:0 }}>
+                    <h3 style={{ marginBottom:4 }}>Between boxes?</h3>
+                    <p className="muted" style={{ margin:0 }}>Browse the full range and order anytime. Your member discount code works at checkout.</p>
+                  </div>
+                  <a className="btn" href={SHOP_URL} target="_blank" rel="noopener noreferrer" style={{ whiteSpace:'nowrap' }}>Shop the range</a>
+                </div>
+              </>
+            )}
 
             <h2>Manage your subscription</h2>
             <div className="dark-card">

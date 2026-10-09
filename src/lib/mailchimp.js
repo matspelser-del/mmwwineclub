@@ -50,6 +50,25 @@ export async function addToAudience({ email, name, discountCode, tier, seats }) 
   return true;
 }
 
+// Apply a tag to one contact as a fresh "tag added" event, so a Customer Journey
+// that triggers on the tag fires every time (we remove it first, then re-add).
+// Used for the per-box "on its way" notification.
+export async function retriggerTag(email, tag) {
+  const key = process.env.MAILCHIMP_API_KEY || '';
+  const audience = process.env.MAILCHIMP_AUDIENCE_ID || '';
+  const dc = key.split('-')[1];
+  if (!key || !dc || !audience) throw new Error('Mailchimp not configured');
+  const addr = String(email || '').trim().toLowerCase();
+  const hash = createHash('md5').update(addr).digest('hex');
+  const auth = 'Basic ' + Buffer.from('any:' + key).toString('base64');
+  const url = `https://${dc}.api.mailchimp.com/3.0/lists/${audience}/members/${hash}/tags`;
+  const headers = { Authorization: auth, 'Content-Type': 'application/json' };
+  // remove (ignore result), then add
+  await fetch(url, { method: 'POST', headers, body: JSON.stringify({ tags: [{ name: tag, status: 'inactive' }] }) }).catch(() => {});
+  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ tags: [{ name: tag, status: 'active' }] }) });
+  return res.ok || res.status === 204;
+}
+
 // Read recent sent campaigns (newsletters) for the Communications view.
 export async function recentCampaigns(count = 10) {
   const key = process.env.MAILCHIMP_API_KEY || '';

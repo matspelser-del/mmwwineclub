@@ -15,6 +15,7 @@ export default function Builder(){
   const [boxes,setBoxes]=useState([]);
   const [items,setItems]=useState([]);
   const [wines,setWines]=useState([]);
+  const [skips,setSkips]=useState([]);
   const [activeMembers,setActiveMembers]=useState(0);
   const [boxId,setBoxId]=useState('');
   const [loading,setLoading]=useState(true);
@@ -27,7 +28,7 @@ export default function Builder(){
     const { data:s }=await supabase.auth.getSession(); const t=s.session?.access_token; setToken(t);
     const res=await fetch('/api/admin/boxes',{headers:{Authorization:`Bearer ${t}`}});
     const j=await res.json();
-    setBoxes(j.boxes||[]); setItems(j.items||[]); setWines(j.wines||[]); setActiveMembers(j.activeMembers||0);
+    setBoxes(j.boxes||[]); setItems(j.items||[]); setWines(j.wines||[]); setSkips(j.skips||[]); setActiveMembers(j.activeMembers||0);
     setMembers(j.activeMembers||0);
     if(!boxId && j.boxes?.length) setBoxId(j.boxes[0].id);
     setLoading(false);
@@ -119,28 +120,49 @@ export default function Builder(){
               <h3>In the box</h3>
               <span className="hint">{calc.bottles} {calc.bottles===1?'bottle':'bottles'}</span>
             </div>
-            <div className="table-scroll"><div className="rows" style={{minWidth:520}}>
-              <div className="rowh" style={{gridTemplateColumns:'1.7fr .6fr .5fr .9fr .9fr auto'}}><div>Item</div><div>From</div><div>Qty</div><div className="r">Cost</div><div className="r">Cellar</div><div></div></div>
-              {rows.length===0 && <div className="empty">Nothing added yet. Pick wines below.</div>}
-              {rows.map(r=>(
-                <div className="row" key={r.id} style={{gridTemplateColumns:'1.7fr .6fr .5fr .9fr .9fr auto'}}>
-                  <div><div className="nm">{r.name}{r.kind==='extra'?' (extra)':''}</div><div className="sub">{r.vintage||''}</div></div>
-                  <div className="sub">{r.producer==='miles'?'Miles':r.producer==='other'?'Other':'—'}</div>
-                  <div><input className="input" style={{padding:'6px 8px',width:52}} type="number" min="1" value={r.qty} onChange={e=>patchItem(r.id,{qty:Number(e.target.value)||1})} /></div>
-                  <div className="r"><input className="input" style={{padding:'6px 8px',width:84,textAlign:'right'}} type="number" value={r.cost_price} onChange={e=>patchItem(r.id,{cost_price:Number(e.target.value)||0})} /></div>
-                  <div className="r"><input className="input" style={{padding:'6px 8px',width:84,textAlign:'right'}} type="number" value={r.cellar_price} onChange={e=>patchItem(r.id,{cellar_price:Number(e.target.value)||0})} /></div>
-                  <div className="r"><button className="x" onClick={()=>delItem(r.id)} aria-label="Remove">×</button></div>
-                </div>
-              ))}
-            </div></div>
+            <div className="bi-head"><div>Item</div><div>From</div><div>Qty</div><div className="bi-num">Cost</div><div className="bi-num">Cellar</div><div></div></div>
+            {rows.length===0 && <div className="empty">Nothing added yet. Pick wines below.</div>}
+            {rows.map(r=>(
+              <div className="bi-row" key={r.id}>
+                <div className="bi-name"><div className="nm">{r.name}{r.kind==='extra'?' (extra)':''}</div><div className="sub">{r.vintage||''}</div></div>
+                <div><span className="bi-lbl">From</span><span className="sub">{r.producer==='miles'?'Miles':r.producer==='other'?'Other':'—'}</span></div>
+                <div><span className="bi-lbl">Qty</span><input className="input" style={{padding:'7px 9px',width:56}} type="number" min="1" value={r.qty} onChange={e=>patchItem(r.id,{qty:Number(e.target.value)||1})} /></div>
+                <div className="bi-num"><span className="bi-lbl">Cost (R)</span><input className="input" style={{padding:'7px 9px',width:88,textAlign:'right'}} type="number" value={r.cost_price} onChange={e=>patchItem(r.id,{cost_price:Number(e.target.value)||0})} /></div>
+                <div className="bi-num"><span className="bi-lbl">Cellar (R)</span><input className="input" style={{padding:'7px 9px',width:88,textAlign:'right'}} type="number" value={r.cellar_price} onChange={e=>patchItem(r.id,{cellar_price:Number(e.target.value)||0})} /></div>
+                <button className="x bi-del" onClick={()=>delItem(r.id)} aria-label="Remove">×</button>
+              </div>
+            ))}
           </div>
 
           {/* ---- Add wines ---- */}
           <div className="card pad">
             <div className="pickbar">
               <h3>Add wines</h3>
-              <input className="input" style={{maxWidth:240}} placeholder="Search the range…" value={q2} onChange={e=>setQ2(e.target.value)} />
+              <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                <input className="input" style={{maxWidth:200}} placeholder="Search the range…" value={q2} onChange={e=>setQ2(e.target.value)} />
+                <button className="btn ghost sm" onClick={()=>setShowCustom(v=>!v)}>{showCustom?'Close':'+ Other wine / extra'}</button>
+              </div>
             </div>
+
+            {showCustom && (
+              <div className="custom-add">
+                <div className="grp" style={{marginTop:0}}>Add a wine from another producer, or an extra</div>
+                <div className="r2" style={{marginBottom:8}}>
+                  <input className="input" placeholder="Name" value={custom.name} onChange={e=>setCustom({...custom,name:e.target.value})} />
+                  <input className="input" placeholder="Vintage (optional)" value={custom.vintage} onChange={e=>setCustom({...custom,vintage:e.target.value})} />
+                </div>
+                <div className="r2" style={{marginBottom:8}}>
+                  <input className="input" type="number" placeholder="Cost price" value={custom.cost_price} onChange={e=>setCustom({...custom,cost_price:e.target.value})} />
+                  <input className="input" type="number" placeholder="Cellar price" value={custom.cellar_price} onChange={e=>setCustom({...custom,cellar_price:e.target.value})} />
+                </div>
+                <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                  <label className="field" style={{margin:0}}>Qty</label>
+                  <input className="input" style={{width:70}} type="number" min="1" value={custom.qty} onChange={e=>setCustom({...custom,qty:e.target.value})} />
+                  <button className="btn ghost sm" onClick={()=>addCustom('wine')} disabled={!custom.name}>Add wine</button>
+                  <button className="btn ghost sm" onClick={()=>addCustom('extra')} disabled={!custom.name}>Add as extra</button>
+                </div>
+              </div>
+            )}
 
             {groups.length===0 && <div className="catalogue-empty">No wines match. Run supabase-wines.sql to load the range, or clear the search.</div>}
 
@@ -167,27 +189,6 @@ export default function Builder(){
                 </div>
               </div>
             ))}
-
-            <button className="x" style={{marginTop:16,padding:'6px 0',color:'var(--red)',fontSize:13,fontWeight:600}} onClick={()=>setShowCustom(v=>!v)}>
-              {showCustom?'– Hide':'+ Add a wine from another producer, or an extra'}
-            </button>
-            {showCustom && (
-              <div style={{marginTop:10}}>
-                <div className="r2" style={{marginBottom:8}}>
-                  <input className="input" placeholder="Name" value={custom.name} onChange={e=>setCustom({...custom,name:e.target.value})} />
-                  <input className="input" placeholder="Vintage (optional)" value={custom.vintage} onChange={e=>setCustom({...custom,vintage:e.target.value})} />
-                </div>
-                <div className="r2" style={{marginBottom:8}}>
-                  <input className="input" type="number" placeholder="Cost price" value={custom.cost_price} onChange={e=>setCustom({...custom,cost_price:e.target.value})} />
-                  <input className="input" type="number" placeholder="Cellar price" value={custom.cellar_price} onChange={e=>setCustom({...custom,cellar_price:e.target.value})} />
-                </div>
-                <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                  <input className="input" style={{width:70}} type="number" min="1" value={custom.qty} onChange={e=>setCustom({...custom,qty:e.target.value})} />
-                  <button className="btn ghost sm" onClick={()=>addCustom('wine')} disabled={!custom.name}>Add wine</button>
-                  <button className="btn ghost sm" onClick={()=>addCustom('extra')} disabled={!custom.name}>Add as extra</button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -215,6 +216,31 @@ export default function Builder(){
             <L k="Total cost" v={rand(calc.totalCostAll)} />
             <L k="Total profit" v={rand(calc.totalProfit)} bold />
           </div>
+
+          {(() => {
+            const skipsForBox = skips.filter(s=>s.box_id===boxId).length;
+            const recv = Math.max(0, (Number(members)||0) - skipsForBox);
+            const wineRows = rows.filter(r=>r.kind==='wine');
+            const totalBottles = wineRows.reduce((s,r)=>s+Number(r.qty||0)*recv,0);
+            return (
+              <>
+                <div className="grp" style={{marginTop:20,display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
+                  <span>Packing list</span>
+                  <span className="hint" style={{textTransform:'none',letterSpacing:0}}>{recv} receiving{skipsForBox?` · ${skipsForBox} skipped`:''}</span>
+                </div>
+                {wineRows.length===0 ? <p className="hint">Add wines to see how many bottles to pull.</p> :
+                  <div className="rows">
+                    {wineRows.map(r=>(
+                      <div className="row" key={'pk'+r.id} style={{gridTemplateColumns:'1fr auto'}}>
+                        <div className="muted">{r.name}{r.vintage?` ${r.vintage}`:''}</div>
+                        <div className="r nm">{Number(r.qty||0)*recv}</div>
+                      </div>
+                    ))}
+                    <L k="Total bottles to pull" v={totalBottles} bold />
+                  </div>}
+              </>
+            );
+          })()}
         </div>
       </div>
     </>

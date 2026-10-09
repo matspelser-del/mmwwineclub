@@ -97,6 +97,21 @@ export default function AdminHome() {
   }
   function copy(text, label) { navigator.clipboard?.writeText(text); setMsg(`✓ ${label} copied.`); }
 
+  function exportDelivery() {
+    const cols = ['Name','Email','Phone','Address 1','Address 2','City','Province','Postal code','Tier','Seats','Discount code'];
+    const esc = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
+    const lines = [cols.join(',')];
+    for (const m of active) {
+      lines.push([m.name, m.email, m.phone, m.addr_line1, m.addr_line2, m.city, m.province, m.postal_code,
+        m.tier === 'lunch' ? 'Lunch' : 'Club', m.seats || '', m.discount_code].map(esc).join(','));
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `delivery-run-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+
   async function onboard() {
     if (!editing?.id) return;
     if (!window.confirm('Run the welcome pipeline? This generates the discount code, creates the WooCommerce coupon, and adds the member to Mailchimp - which sends the welcome email.')) return;
@@ -120,7 +135,10 @@ export default function AdminHome() {
     <>
       <div className="head" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:12 }}>
         <div><h1>Subscriptions</h1><p>{members.length} members · {active.length} active</p></div>
-        <button className="btn" onClick={openNew}>+ Add member</button>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button className="btn ghost" onClick={exportDelivery} disabled={active.length===0}>Export delivery CSV</button>
+          <button className="btn" onClick={openNew}>+ Add member</button>
+        </div>
       </div>
 
       <div className="stats stagger">

@@ -7,15 +7,16 @@ async function gate(r){ const u=await userFromRequest(r); return (u && isAdminEm
 export async function GET(request){
   if(!(await gate(request))) return NextResponse.json({error:'forbidden'},{status:403});
   const db=admin();
-  const [b,i,t,w,m]=await Promise.all([
+  const [b,i,t,w,m,sk]=await Promise.all([
     db.from('boxes').select('*').order('position',{ascending:true}),
     db.from('box_items').select('*').order('position',{ascending:true}),
     db.from('box_timeline').select('*').order('due_date',{ascending:true}),
     db.from('wines').select('*').order('producer',{ascending:true}),
     db.from('members').select('status,tier,seats'),
+    db.from('box_skips').select('member_id,box_id'),
   ]);
   const activeMembers=(m.data||[]).filter(x=>x.status==='active').length;
-  return NextResponse.json({boxes:b.data||[],items:i.data||[],timeline:t.data||[],wines:w.data||[],activeMembers});
+  return NextResponse.json({boxes:b.data||[],items:i.data||[],timeline:t.data||[],wines:w.data||[],activeMembers,skips:sk.data||[]});
 }
 export async function POST(request){
   if(!(await gate(request))) return NextResponse.json({error:'forbidden'},{status:403});
