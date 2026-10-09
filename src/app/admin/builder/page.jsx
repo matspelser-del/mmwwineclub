@@ -80,6 +80,66 @@ export default function Builder(){
     setBoxes(bs=>bs.map(b=>b.id===boxId?{...b,delivery_fee:Number(v)||0}:b));
   }
 
+  async function printPackingList(){
+    if(!boxId || !rows.length){ alert('Add wines to the box first.'); return; }
+    const res=await fetch('/api/admin/members',{headers:{Authorization:`Bearer ${token}`}});
+    const j=await res.json().catch(()=>({}));
+    const skippedIds=new Set(skips.filter(s=>s.box_id===boxId).map(s=>s.member_id));
+    const receiving=(j.members||[]).filter(m=>m.status==='active' && !skippedIds.has(m.id));
+    const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const label=box?.label||'Box';
+    const today=new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'});
+    const contents=r=>`${Number(r.qty||0)>1?Number(r.qty)+' × ':'1 × '}${esc(r.name)}${r.vintage?' '+esc(r.vintage):''}${r.kind==='extra'?' (extra)':''}`;
+
+    // totals page
+    const totalsRows=rows.map(r=>`<tr><td>${contents(r)}</td><td class="n">${Number(r.qty||0)}</td><td class="n">${receiving.length}</td><td class="n b">${Number(r.qty||0)*receiving.length}</td></tr>`).join('');
+    const grand=rows.filter(r=>r.kind==='wine').reduce((s,r)=>s+Number(r.qty||0)*receiving.length,0);
+    const totalsPage=`<section class="page">
+      <h1>${esc(label)} — packing list</h1>
+      <p class="meta">${today} · ${receiving.length} member${receiving.length===1?'':'s'} receiving</p>
+      <table><thead><tr><th>Item</th><th class="n">Per box</th><th class="n">Members</th><th class="n">Total to pull</th></tr></thead>
+      <tbody>${totalsRows}</tbody>
+      <tfoot><tr><td class="b">Total bottles to pull</td><td></td><td></td><td class="n b">${grand}</td></tr></tfoot></table>
+    </section>`;
+
+    // member pages, 5 per page
+    const card=m=>{
+      const addr=[m.addr_line1,m.addr_line2,[m.city,m.postal_code].filter(Boolean).join(' '),m.province].filter(Boolean).map(esc).join(', ');
+      const items=rows.map(r=>`<li><span class="box">▢</span> ${contents(r)}</li>`).join('');
+      return `<div class="member"><div class="m-top"><div class="m-name">${esc(m.name||'—')}</div><div class="m-contact">${esc(m.phone||'')}</div></div>
+        <div class="m-addr">${addr||'— no address on file —'}</div>
+        <ul class="m-items">${items}</ul></div>`;
+    };
+    let memberPages='';
+    for(let i=0;i<receiving.length;i+=5){
+      memberPages+=`<section class="page"><h2>${esc(label)} — member sheets (${i+1}–${Math.min(i+5,receiving.length)} of ${receiving.length})</h2>${receiving.slice(i,i+5).map(card).join('')}</section>`;
+    }
+    if(!receiving.length) memberPages=`<section class="page"><p>No active members to pack for.</p></section>`;
+
+    const html=`<!doctype html><html><head><meta charset="utf-8"><title>${esc(label)} packing list</title>
+    <style>
+      @page{size:A4;margin:16mm}
+      *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;margin:0;font-size:13px}
+      .page{page-break-after:always;padding:0}
+      .page:last-child{page-break-after:auto}
+      h1{font-size:22px;margin:0 0 4px} h2{font-size:15px;margin:0 0 14px;color:#555}
+      .meta{color:#666;margin:0 0 18px}
+      table{width:100%;border-collapse:collapse;margin-top:8px} th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #ddd}
+      th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#666} .n{text-align:right} .b{font-weight:bold}
+      tfoot td{border-top:2px solid #333;border-bottom:none;font-size:14px}
+      .member{border:1px solid #ccc;border-radius:8px;padding:12px 14px;margin-bottom:10px;break-inside:avoid}
+      .m-top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:6px}
+      .m-name{font-size:16px;font-weight:bold} .m-contact{color:#666;font-size:12px}
+      .m-addr{color:#333;margin-bottom:8px} .m-items{list-style:none;margin:0;padding:0}
+      .m-items li{padding:3px 0} .box{color:#952B2A;margin-right:6px}
+    </style></head><body>${totalsPage}${memberPages}
+    <script>window.onload=function(){window.print();}<\/script></body></html>`;
+
+    const w=window.open('','_blank');
+    if(!w){ alert('Allow pop-ups to download the packing list.'); return; }
+    w.document.write(html); w.document.close();
+  }
+
   const calc=useMemo(()=>{
     const wineCost=rows.filter(r=>r.kind==='wine').reduce((s,r)=>s+Number(r.cost_price||0)*Number(r.qty||0),0);
     const extrasCost=rows.filter(r=>r.kind==='extra').reduce((s,r)=>s+Number(r.cost_price||0)*Number(r.qty||0),0);
@@ -229,15 +289,19 @@ export default function Builder(){
                   <span className="hint" style={{textTransform:'none',letterSpacing:0}}>{recv} receiving{skipsForBox?` · ${skipsForBox} skipped`:''}</span>
                 </div>
                 {wineRows.length===0 ? <p className="hint">Add wines to see how many bottles to pull.</p> :
-                  <div className="rows">
-                    {wineRows.map(r=>(
-                      <div className="row" key={'pk'+r.id} style={{gridTemplateColumns:'1fr auto'}}>
-                        <div className="muted">{r.name}{r.vintage?` ${r.vintage}`:''}</div>
-                        <div className="r nm">{Number(r.qty||0)*recv}</div>
-                      </div>
-                    ))}
-                    <L k="Total bottles to pull" v={totalBottles} bold />
-                  </div>}
+                  <>
+                    <div className="rows">
+                      {wineRows.map(r=>(
+                        <div className="row" key={'pk'+r.id} style={{gridTemplateColumns:'1fr auto'}}>
+                          <div className="muted">{r.name}{r.vintage?` ${r.vintage}`:''}</div>
+                          <div className="r nm">{Number(r.qty||0)*recv}</div>
+                        </div>
+                      ))}
+                      <L k="Total bottles to pull" v={totalBottles} bold />
+                    </div>
+                    <button className="btn sm" style={{marginTop:14}} onClick={printPackingList}>Download packing list (PDF)</button>
+                    <p className="hint" style={{marginTop:6}}>Totals first, then one sheet per member, 5 to a page. Opens a print window - choose "Save as PDF".</p>
+                  </>}
               </>
             );
           })()}
