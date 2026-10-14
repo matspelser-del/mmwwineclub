@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 
-const enc = (v) => encodeURIComponent(String(v).trim()).replace(/%20/g, '+');
+// Payfast signs the RAW value (spaces as +). It does NOT trim, so we must not
+// either - trimming here silently broke the signature for any field a member
+// typed with a leading/trailing space, leaving them stranded as "pending".
+const enc = (v) => encodeURIComponent(String(v)).replace(/%20/g, '+');
 
 // ---- ITN (webhook) verification ----
 export function verifyItnSignature(orderedPairs, passphrase) {

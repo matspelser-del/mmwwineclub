@@ -15,17 +15,28 @@ export async function POST(request) {
   const sandbox = process.env.PAYFAST_SANDBOX === 'true';
   const passphrase = process.env.PAYFAST_PASSPHRASE || '';
 
-  if (!verifyItnSignature(ordered, passphrase)) return new NextResponse('bad signature', { status: 400 });
-  if (!(await validateItnPostback(ordered, sandbox))) return new NextResponse('not validated', { status: 400 });
-
   const db = admin();
   const status = String(data.payment_status || '').toUpperCase();
   const email = String(data.email_address || '').toLowerCase();
   const amount = parseFloat(data.amount_gross || data.amount || '0');
   const itemName = data.item_name || '';
   const token = data.token || null;
-  const tier = itemName.toLowerCase().includes('lunch') ? 'lunch' : 'club';
+  // tier from amount (reliable) or any seat/lunch wording in the item name
+  const tier = (amount >= 4000 || /lunch|seat|gather/i.test(itemName)) ? 'lunch' : 'club';
   const name = `${data.name_first || ''} ${data.name_last || ''}`.trim();
+
+  // Record EVERY ITN before it can be rejected, so a stranded "pending" member is
+  // never a mystery - the log shows whether signature/validation passed.
+  const sigOk = verifyItnSignature(ordered, passphrase);
+  const validated = sigOk ? await validateItnPostback(ordered, sandbox) : false;
+  await db.from('itn_log').insert({
+    email, m_payment_id: data.m_payment_id || null, pf_payment_id: data.pf_payment_id || null,
+    payment_status: data.payment_status || null, amount, signature_ok: sigOk, validated,
+    result: !sigOk ? 'bad signature' : !validated ? 'not validated' : 'accepted', raw: data,
+  }).catch((e) => console.error('itn_log insert failed', e));
+
+  if (!sigOk) return new NextResponse('bad signature', { status: 400 });
+  if (!validated) return new NextResponse('not validated', { status: 400 });
   // capture an address if Payfast happens to send one (fields may be absent)
   const addr = {
     addr_line1: data.line1 || null, addr_line2: data.line2 || null,

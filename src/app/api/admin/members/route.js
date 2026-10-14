@@ -12,12 +12,14 @@ async function gate(request) {
 export async function GET(request) {
   if (!(await gate(request))) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   const db = admin();
-  const [m, p, e] = await Promise.all([
+  const since = new Date(Date.now() - 14 * 864e5).toISOString();
+  const [m, p, e, itn] = await Promise.all([
     db.from('members').select('*').order('created_at', { ascending: false }),
     db.from('payments').select('*').order('created_at', { ascending: false }).limit(100),
     db.from('member_events').select('*').order('created_at', { ascending: false }).limit(100),
+    db.from('itn_log').select('created_at,email,amount,result').neq('result', 'accepted').gte('created_at', since).order('created_at', { ascending: false }).limit(20),
   ]);
-  return NextResponse.json({ members: m.data || [], payments: p.data || [], events: e.data || [] });
+  return NextResponse.json({ members: m.data || [], payments: p.data || [], events: e.data || [], itnFailures: itn.data || [] });
 }
 
 const FIELDS = ['email','name','phone','tier','seats','status','payfast_token','start_date',

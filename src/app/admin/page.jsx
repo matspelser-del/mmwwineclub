@@ -131,8 +131,24 @@ export default function AdminHome() {
 
   if (loading) return <DashboardSkeleton />;
 
+  const itnFailures = data.itnFailures || [];
+
   return (
     <>
+      {itnFailures.length > 0 && (
+        <div style={{ background:'var(--red-soft)', border:'1px solid var(--red)', borderRadius:12, padding:'14px 18px', marginBottom:20 }}>
+          <div style={{ fontWeight:600, color:'var(--red)', marginBottom:6 }}>⚠ {itnFailures.length} payment notification{itnFailures.length===1?'':'s'} failed verification in the last 14 days</div>
+          <div className="hint" style={{ marginBottom:8 }}>Payfast sent these but the app rejected them, so the member may be stuck on pending. Find the member below, open them, and use "Onboard &amp; send welcome".</div>
+          {itnFailures.slice(0,5).map((f,i)=>(
+            <div key={i} className="sub" style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+              <span className="code">{f.email||'—'}</span>
+              <span>{rand(f.amount||0)}</span>
+              <span style={{ color:'var(--red)' }}>{f.result}</span>
+              <span>{shortDate(f.created_at)}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="head" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:12 }}>
         <div><h1>Subscriptions</h1><p>{members.length} members · {active.length} active</p></div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
