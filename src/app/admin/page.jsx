@@ -119,7 +119,11 @@ export default function AdminHome() {
     const res = await fetch('/api/admin/sync-subscriptions', { method:'POST', headers:{ Authorization:`Bearer ${token}` } });
     const j = await res.json().catch(()=>({}));
     setSyncing(false);
-    if (res.ok) { setMsg(`✓ Synced ${j.updated} of ${j.withToken} with a Payfast token.${j.failed?.length?` ${j.failed.length} couldn't be read.`:''}`); load(); }
+    if (res.ok) {
+      const errNote = j.failed?.length ? ` First error from Payfast: ${String(j.failed[0].error).slice(0,160)}` : '';
+      setMsg(`✓ ${j.withToken} member${j.withToken===1?'':'s'} have a saved token · ${j.updated} got a date from Payfast${j.failed?.length?` · ${j.failed.length} failed.${errNote}`:'.'}`);
+      load();
+    }
     else setMsg(j.error || 'Sync failed');
   }
 
@@ -201,7 +205,7 @@ export default function AdminHome() {
         <div className="rowh"><div>Member</div><div>Delivery address</div><div>Tier</div><div>Status</div><div>Next payment · code</div></div>
         {filtered.length === 0 ? <div className="empty">No members yet.</div> :
           filtered.map((m) => {
-            const next = m.next_payment_date || (m.status==='active' ? nextQuarterly(m.start_date) : '');
+            const next = m.next_payment_date || (m.status==='active' ? nextQuarterly(m.start_date || m.created_at) : '');
             return (
             <div className="row" key={m.id} style={{ cursor:'pointer' }} onClick={()=>openEdit(m)}>
               <div><div className="nm">{m.name}</div><div className="sub">{m.email}</div></div>

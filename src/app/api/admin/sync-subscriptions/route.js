@@ -13,7 +13,8 @@ async function gate(request) {
 export async function POST(request) {
   if (!(await gate(request))) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   const db = admin();
-  const { data: members } = await db.from('members').select('id,email,payfast_token').not('payfast_token', 'is', null);
+  const { data: members } = await db.from('members').select('id,email,payfast_token')
+    .not('payfast_token', 'is', null).neq('payfast_token', '');
 
   let updated = 0; const failed = [];
   for (const m of members || []) {
