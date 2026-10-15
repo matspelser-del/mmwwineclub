@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { rand, shortDate } from '@/lib/format';
+import { rand, shortDate, nextQuarterly } from '@/lib/format';
 import DashboardSkeleton from '@/components/Skeleton';
 import CountUp from '@/components/CountUp';
 
@@ -43,6 +43,8 @@ export default function AdminHome() {
   const [editing, setEditing] = useState(null); // member object, {} for new, or null
   const [form, setForm] = useState(BLANK);
   const [onboarding, setOnboarding] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [payAmt, setPayAmt] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -112,6 +114,26 @@ export default function AdminHome() {
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
 
+  async function syncDates() {
+    setSyncing(true); setMsg('');
+    const res = await fetch('/api/admin/sync-subscriptions', { method:'POST', headers:{ Authorization:`Bearer ${token}` } });
+    const j = await res.json().catch(()=>({}));
+    setSyncing(false);
+    if (res.ok) { setMsg(`✓ Synced ${j.updated} of ${j.withToken} with a Payfast token.${j.failed?.length?` ${j.failed.length} couldn't be read.`:''}`); load(); }
+    else setMsg(j.error || 'Sync failed');
+  }
+
+  async function recordPayment() {
+    if (!editing?.id) return;
+    const amount = Number(payAmt);
+    if (!amount || amount <= 0) { setMsg('Enter a valid amount.'); return; }
+    if (!window.confirm(`Record a completed payment of R${amount} for ${form.name}? This adds to Payments received.`)) return;
+    const res = await fetch('/api/admin/payment', { method:'POST', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ member_id: editing.id, amount }) });
+    const j = await res.json().catch(()=>({}));
+    if (res.ok) { setMsg(`✓ Payment of R${amount} recorded.`); setPayAmt(''); load(); }
+    else setMsg(j.error || 'Could not record payment');
+  }
+
   async function onboard() {
     if (!editing?.id) return;
     if (!window.confirm('Run the welcome pipeline? This generates the discount code, creates the WooCommerce coupon, and adds the member to Mailchimp - which sends the welcome email.')) return;
@@ -128,6 +150,7 @@ export default function AdminHome() {
 
   const portalUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const cardLink = form.payfast_token ? `${CARD_BASE}/${form.payfast_token}` : '';
+  const tierAmount = form.tier === 'club' ? 2500 : (Number(form.seats) >= 2 ? 5500 : 4000);
 
   if (loading) return <DashboardSkeleton />;
 
@@ -152,6 +175,7 @@ export default function AdminHome() {
       <div className="head" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:12 }}>
         <div><h1>Subscriptions</h1><p>{members.length} members · {active.length} active</p></div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button className="btn ghost" onClick={syncDates} disabled={syncing}>{syncing?'Syncing…':'Sync next payment dates'}</button>
           <button className="btn ghost" onClick={exportDelivery} disabled={active.length===0}>Export delivery CSV</button>
           <button className="btn" onClick={openNew}>+ Add member</button>
         </div>
@@ -174,17 +198,19 @@ export default function AdminHome() {
       <input className="input search" placeholder="Search name, email, town, code…" value={q} onChange={(e)=>setQ(e.target.value)} />
 
       <div className="card subs">
-        <div className="rowh"><div>Member</div><div>Delivery address</div><div>Tier</div><div>Status</div><div>Started · code</div></div>
+        <div className="rowh"><div>Member</div><div>Delivery address</div><div>Tier</div><div>Status</div><div>Next payment · code</div></div>
         {filtered.length === 0 ? <div className="empty">No members yet.</div> :
-          filtered.map((m) => (
+          filtered.map((m) => {
+            const next = m.next_payment_date || (m.status==='active' ? nextQuarterly(m.start_date) : '');
+            return (
             <div className="row" key={m.id} style={{ cursor:'pointer' }} onClick={()=>openEdit(m)}>
               <div><div className="nm">{m.name}</div><div className="sub">{m.email}</div></div>
               <div className="sub">{m.addr_line1 ? `${m.addr_line1}${m.addr_line2?', '+m.addr_line2:''}, ${m.city||''} ${m.postal_code||''}` : '— not provided —'}</div>
               <div><span className={`badge ${m.tier==='lunch'?'red':'blue'}`}><span className="dot" />{m.tier==='lunch'?`Lunch ×${m.seats||1}`:'Club'}</span></div>
               <div><Badge v={m.status} /></div>
-              <div className="sub">{shortDate(m.start_date)}<br/>{m.discount_code ? <span className="code">{m.discount_code}</span> : ''}</div>
+              <div className="sub">{next ? <>{shortDate(next)}{!m.next_payment_date && <span style={{opacity:.6}}> (est.)</span>}</> : '—'}<br/>{m.discount_code ? <span className="code">{m.discount_code}</span> : ''}</div>
             </div>
-          ))}
+          );})}
       </div>
 
       {editing && (
@@ -231,6 +257,18 @@ export default function AdminHome() {
                   ? <button className="btn ghost sm" onClick={()=>copy(cardLink,'Card-update link')}>Copy card-update link</button>
                   : <span className="hint">Add a token to enable billing actions</span>}
               </div>
+            )}
+
+            {editing.id && (
+              <>
+                <div className="grp">Payments</div>
+                <p className="hint" style={{ marginBottom:10 }}>Next payment: <b>{editing.next_payment_date ? shortDate(editing.next_payment_date) : '— not synced; add a token and hit "Sync next payment dates" —'}</b></p>
+                <div className="actionbar">
+                  <input className="input" style={{ maxWidth:150 }} type="number" placeholder={`Amount, e.g. ${tierAmount}`} value={payAmt} onChange={(e)=>setPayAmt(e.target.value)} />
+                  <button className="btn ghost sm" onClick={recordPayment} disabled={!payAmt}>Record a payment</button>
+                </div>
+                <p className="hint">Records a completed payment so "Payments received" is correct - use it to reconcile a charge Payfast took but the app missed.</p>
+              </>
             )}
 
             {editing.id && (

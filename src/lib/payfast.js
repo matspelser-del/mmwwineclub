@@ -52,3 +52,19 @@ async function subAction(action, token) {
 export const pauseSubscription  = (token) => subAction('pause', token);
 export const unpauseSubscription = (token) => subAction('unpause', token);
 export const cancelSubscription = (token) => subAction('cancel', token);
+
+// Fetch a subscription's live details from Payfast (next run date, status, amount).
+export async function fetchSubscription(token) {
+  const merchantId = process.env.PAYFAST_MERCHANT_ID || '';
+  const passphrase = process.env.PAYFAST_PASSPHRASE || '';
+  const sandbox = process.env.PAYFAST_SANDBOX === 'true';
+  const headerFields = { 'merchant-id': merchantId, version: 'v1', timestamp: new Date().toISOString() };
+  const signature = apiSignature(headerFields, passphrase);
+  const url = `https://api.payfast.co.za/subscriptions/${token}/fetch${sandbox ? '?testing=true' : ''}`;
+  const res = await fetch(url, { headers: { ...headerFields, signature } });
+  const text = await res.text();
+  if (!res.ok) return { ok: false, status: res.status, body: text };
+  let j; try { j = JSON.parse(text); } catch { return { ok: false, body: text }; }
+  const d = j.data?.response || j.data || j;
+  return { ok: true, run_date: d.run_date || null, status_text: d.status_text || null, amount: d.amount ?? null, raw: d };
+}
