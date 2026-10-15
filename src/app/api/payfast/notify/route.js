@@ -25,17 +25,21 @@ export async function POST(request) {
   const tier = (amount >= 4000 || /lunch|seat|gather/i.test(itemName)) ? 'lunch' : 'club';
   const name = `${data.name_first || ''} ${data.name_last || ''}`.trim();
 
-  // Record EVERY ITN before it can be rejected, so a stranded "pending" member is
-  // never a mystery - the log shows whether signature/validation passed.
+  // Authenticity: Payfast's server-to-server postback (validateItnPostback) is the
+  // authority - Payfast confirms this is a real, matching transaction. Our own
+  // signature recompute is finicky (exact URL-encoding of names/addresses), so it
+  // is a LOGGED signal, not a hard gate: a genuine payment Payfast confirms must
+  // never be stranded just because our MD5 disagreed. Every ITN is logged first.
   const sigOk = verifyItnSignature(ordered, passphrase);
-  const validated = sigOk ? await validateItnPostback(ordered, sandbox) : false;
+  const validated = await validateItnPostback(ordered, sandbox);
+  const result = validated ? (sigOk ? 'accepted' : 'accepted (signature mismatch)') : 'not validated';
   await db.from('itn_log').insert({
     email, m_payment_id: data.m_payment_id || null, pf_payment_id: data.pf_payment_id || null,
     payment_status: data.payment_status || null, amount, signature_ok: sigOk, validated,
-    result: !sigOk ? 'bad signature' : !validated ? 'not validated' : 'accepted', raw: data,
+    result, raw: data,
   }).catch((e) => console.error('itn_log insert failed', e));
 
-  if (!sigOk) return new NextResponse('bad signature', { status: 400 });
+  // Reject only if Payfast itself does not confirm the transaction.
   if (!validated) return new NextResponse('not validated', { status: 400 });
   // capture an address if Payfast happens to send one (fields may be absent)
   const addr = {

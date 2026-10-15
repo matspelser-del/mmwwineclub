@@ -1,8 +1,19 @@
 import './globals.css';
 export const metadata = {
-  title: 'Wine Club Manager',
+  title: 'Miles Mossop Wine Club',
   description: 'Miles Mossop Family Wine Club',
   manifest: '/manifest.json',
+  // NOT a standalone web app on purpose: standalone PWAs get isolated storage on
+  // iOS, so a magic-link login (which opens in Safari) never reaches the installed
+  // app. Opening in the browser shares Safari's session, so sign-in works.
+  appleWebApp: { capable: false },
+  icons: { icon: '/icon-192.png', apple: '/apple-touch-icon.png' },
+};
+export const viewport = {
+  themeColor: '#141414',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 export default function RootLayout({ children }) {
   return (

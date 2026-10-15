@@ -20,9 +20,9 @@ function Donut({ club, lunch }) {
         <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="700" fill="#1a1a1a" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
         <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#77736e">active</text>
       </svg>
-      <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#3a6491'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b></div>
-        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#952B2A'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b></div>
+      <div style={{display:'flex',flexDirection:'column',gap:12,minWidth:170}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#3a6491'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(club/total*100):0}%</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#952B2A'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(lunch/total*100):0}%</span></div>
       </div>
     </div>
   );
@@ -165,8 +165,8 @@ export default function AdminHome() {
       </div>
 
       {active.length > 0 && (
-        <div className="card pad" style={{ marginBottom: 18, maxWidth: 420 }}>
-          <h3>Active members by tier</h3>
+        <div className="card pad" style={{ marginBottom: 18, maxWidth: 480 }}>
+          <h3 style={{ marginBottom: 14 }}>Active members by tier</h3>
           <Donut club={clubActive} lunch={lunchActive} />
         </div>
       )}
@@ -190,7 +190,7 @@ export default function AdminHome() {
       {editing && (
         <div className="pf-overlay open" onMouseDown={()=>setEditing(null)}>
           <div className="pf-modal light" onMouseDown={(e)=>e.stopPropagation()}>
-            <button className="pf-close" onClick={()=>setEditing(null)}>×</button>
+            <button className="pf-close" onClick={()=>setEditing(null)} aria-label="Close">×</button>
             <h3>{editing.id ? form.name || 'Member' : 'Add member'}</h3>
 
             <div className="grp">Member</div>

@@ -41,7 +41,7 @@ input[type=number].input{appearance:textfield;-moz-appearance:textfield}
 .nav a.active,.nav a:hover{background:var(--red-soft);color:var(--red)}
 .sidebar .foot{margin-top:auto}
 .sidebar .foot button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:8px 12px}
-.main{flex:1;min-width:0;padding:38px clamp(18px,4vw,52px) 56px;animation:fade-up var(--dur-normal) var(--ease-out) backwards}
+.main{flex:1;min-width:0;max-width:1320px;padding:38px clamp(18px,4vw,52px) 56px;animation:fade-up var(--dur-normal) var(--ease-out) backwards}
 .head{margin-bottom:28px}
 .head h1{font-size:27px;letter-spacing:-.02em} .head p{color:var(--muted);font-size:14px;margin-top:5px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px}
@@ -54,6 +54,8 @@ input[type=number].input{appearance:textfield;-moz-appearance:textfield}
 .rowh,.row{display:grid;grid-template-columns:1.4fr 1.3fr .8fr .9fr 1fr;gap:12px;padding:16px 20px;align-items:center;font-size:14px}
 .rowh{background:#fbfafa;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
 .row{border-top:1px solid var(--line);transition:background .12s ease}
+.subs .row{cursor:pointer}
+.subs .row:hover{background:#faf8f7}
 .row .nm{font-weight:600} .row .sub{color:var(--muted);font-size:12px}
 .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--bg);padding:2px 7px;border-radius:5px}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}

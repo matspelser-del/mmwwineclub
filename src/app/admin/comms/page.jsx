@@ -13,8 +13,8 @@ export default function Comms(){
   return (
     <>
       <div className="head"><h1>Communications</h1><p>Newsletters sent from Mailchimp to the club.</p></div>
-      {loading ? <p className="empty">Loading…</p> : (
-        <div className="card">
+      {loading ? <div className="loader-full" style={{minHeight:'40vh'}}><div className="session-spinner" /></div> : (
+        <div className="card subs">
           <div className="rowh" style={{gridTemplateColumns:'2fr 1fr .8fr .8fr'}}><div>Newsletter</div><div>Sent</div><div className="r">Recipients</div><div className="r">Opens</div></div>
           {rows.length===0 ? <div className="empty">{err?`${err}. Check the Mailchimp key is set.`:'No newsletters sent yet, or Mailchimp isn’t connected.'}</div> :
             rows.map(c=>(
