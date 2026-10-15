@@ -33,12 +33,14 @@ function pfTimestamp() {
   return `${s.getUTCFullYear()}-${p(s.getUTCMonth() + 1)}-${p(s.getUTCDate())}T${p(s.getUTCHours())}:${p(s.getUTCMinutes())}:${p(s.getUTCSeconds())}+02:00`;
 }
 
-// ---- Subscription API (pause / unpause / cancel) ----
-// Signature = md5 of all header fields + body fields, sorted, + passphrase.
+// ---- Subscription API (pause / unpause / cancel / fetch) ----
+// The API signature differs from the checkout/ITN one: the passphrase is
+// included as a FIELD and sorted alphabetically with the others (merchant-id,
+// passphrase, timestamp, version), not appended at the end. Appending it gave
+// a 401 "Merchant authorization failed".
 function apiSignature(fields, passphrase) {
-  const keys = Object.keys(fields).sort();
-  let str = keys.map((k) => `${k}=${enc(fields[k])}`).join('&');
-  if (passphrase) str += `&passphrase=${enc(passphrase)}`;
+  const all = passphrase ? { ...fields, passphrase } : { ...fields };
+  const str = Object.keys(all).sort().map((k) => `${k}=${enc(all[k])}`).join('&');
   return crypto.createHash('md5').update(str).digest('hex');
 }
 
