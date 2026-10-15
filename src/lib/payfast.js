@@ -23,6 +23,16 @@ export async function validateItnPostback(orderedPairs, sandbox) {
   return (await res.text()).trim() === 'VALID';
 }
 
+// Payfast's API expects the timestamp in ISO-8601 with a timezone offset and NO
+// milliseconds, e.g. 2026-10-15T10:16:00+02:00. toISOString() returns
+// ...:00.000Z, and the millis/Z form is a common cause of the API rejecting the
+// request, so build the SAST (UTC+2) form explicitly.
+function pfTimestamp() {
+  const s = new Date(Date.now() + 2 * 3600 * 1000);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${s.getUTCFullYear()}-${p(s.getUTCMonth() + 1)}-${p(s.getUTCDate())}T${p(s.getUTCHours())}:${p(s.getUTCMinutes())}:${p(s.getUTCSeconds())}+02:00`;
+}
+
 // ---- Subscription API (pause / unpause / cancel) ----
 // Signature = md5 of all header fields + body fields, sorted, + passphrase.
 function apiSignature(fields, passphrase) {
@@ -36,7 +46,7 @@ async function subAction(action, token) {
   const merchantId = process.env.PAYFAST_MERCHANT_ID || '';
   const passphrase = process.env.PAYFAST_PASSPHRASE || '';
   const sandbox = process.env.PAYFAST_SANDBOX === 'true';
-  const timestamp = new Date().toISOString();
+  const timestamp = pfTimestamp();
   const headerFields = { 'merchant-id': merchantId, version: 'v1', timestamp };
   const signature = apiSignature(headerFields, passphrase);
   const base = 'https://api.payfast.co.za';
@@ -58,7 +68,7 @@ export async function fetchSubscription(token) {
   const merchantId = process.env.PAYFAST_MERCHANT_ID || '';
   const passphrase = process.env.PAYFAST_PASSPHRASE || '';
   const sandbox = process.env.PAYFAST_SANDBOX === 'true';
-  const headerFields = { 'merchant-id': merchantId, version: 'v1', timestamp: new Date().toISOString() };
+  const headerFields = { 'merchant-id': merchantId, version: 'v1', timestamp: pfTimestamp() };
   const signature = apiSignature(headerFields, passphrase);
   const url = `https://api.payfast.co.za/subscriptions/${token}/fetch${sandbox ? '?testing=true' : ''}`;
   const res = await fetch(url, { headers: { ...headerFields, signature } });

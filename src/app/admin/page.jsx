@@ -44,6 +44,7 @@ export default function AdminHome() {
   const [form, setForm] = useState(BLANK);
   const [onboarding, setOnboarding] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
   const [payAmt, setPayAmt] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -115,16 +116,16 @@ export default function AdminHome() {
   }
 
   async function syncDates() {
-    setSyncing(true); setMsg('');
+    setSyncing(true); setSyncMsg('Syncing…');
     const res = await fetch('/api/admin/sync-subscriptions', { method:'POST', headers:{ Authorization:`Bearer ${token}` } });
     const j = await res.json().catch(()=>({}));
     setSyncing(false);
     if (res.ok) {
-      const errNote = j.failed?.length ? ` First error from Payfast: ${String(j.failed[0].error).slice(0,160)}` : '';
-      setMsg(`✓ ${j.withToken} member${j.withToken===1?'':'s'} have a saved token · ${j.updated} got a date from Payfast${j.failed?.length?` · ${j.failed.length} failed.${errNote}`:'.'}`);
+      const errNote = j.failed?.length ? ` First error from Payfast: ${String(j.failed[0].error).slice(0,200)}` : '';
+      setSyncMsg(`${j.withToken} member${j.withToken===1?'':'s'} have a saved token · ${j.updated} got a date from Payfast${j.failed?.length?` · ${j.failed.length} failed.${errNote}`:'.'}`);
       load();
     }
-    else setMsg(j.error || 'Sync failed');
+    else setSyncMsg(j.error || 'Sync failed');
   }
 
   async function recordPayment() {
@@ -184,6 +185,13 @@ export default function AdminHome() {
           <button className="btn" onClick={openNew}>+ Add member</button>
         </div>
       </div>
+
+      {syncMsg && (
+        <div style={{ background:'var(--bg)', border:'1px solid var(--line)', borderRadius:12, padding:'12px 16px', marginBottom:18, display:'flex', justifyContent:'space-between', gap:12, alignItems:'flex-start' }}>
+          <span className="hint" style={{ color: syncMsg.includes('failed') ? 'var(--red)' : 'var(--ink)' }}>{syncMsg}</span>
+          <button className="x" onClick={()=>setSyncMsg('')} aria-label="Dismiss">×</button>
+        </div>
+      )}
 
       <div className="stats stagger">
         <div className="stat"><div className="l">Active members</div><div className="v"><CountUp value={active.length} /></div></div>
