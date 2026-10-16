@@ -33,11 +33,19 @@ export async function POST(request) {
   const sigOk = verifyItnSignature(ordered, passphrase);
   const validated = await validateItnPostback(ordered, sandbox);
   const result = validated ? (sigOk ? 'accepted' : 'accepted (signature mismatch)') : 'not validated';
-  await db.from('itn_log').insert({
-    email, m_payment_id: data.m_payment_id || null, pf_payment_id: data.pf_payment_id || null,
-    payment_status: data.payment_status || null, amount, signature_ok: sigOk, validated,
-    result, raw: data,
-  }).catch((e) => console.error('itn_log insert failed', e));
+  // Logging must NEVER strand a paid member. The Supabase builder is a thenable
+  // with no .catch(), so chaining .catch() onto .insert() threw a TypeError and
+  // crashed the whole handler (500) before activation ever ran. Await it, read the
+  // error from the result, and wrap in try/catch so a missing table or any other
+  // log failure is noted and ignored - activation below still proceeds.
+  try {
+    const { error: logErr } = await db.from('itn_log').insert({
+      email, m_payment_id: data.m_payment_id || null, pf_payment_id: data.pf_payment_id || null,
+      payment_status: data.payment_status || null, amount, signature_ok: sigOk, validated,
+      result, raw: data,
+    });
+    if (logErr) console.error('itn_log insert failed', logErr);
+  } catch (e) { console.error('itn_log insert threw', e); }
 
   // Reject only if Payfast itself does not confirm the transaction.
   if (!validated) return new NextResponse('not validated', { status: 400 });
