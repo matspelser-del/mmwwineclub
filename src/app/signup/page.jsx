@@ -60,6 +60,11 @@ function Form() {
 
   return (
     <form onSubmit={submit}>
+      <div className="dark-card" style={{ borderLeft:'3px solid #952B2A', marginBottom:16 }}>
+        <b style={{ color:'#efeae3' }}>First delivery: December 2026</b>
+        <br/><span className="muted" style={{ fontSize:14 }}>Join now to hold your place. Your first box is delivered in December, then once a quarter after that.</span>
+      </div>
+
       <div className="dark-card">
         <h3>Choose your membership</h3>
         {Object.entries(PLANS).map(([k,v]) => {
@@ -98,7 +103,7 @@ function Form() {
 
       {err && <p className="note" style={{ color:'#d98b88' }}>{err}</p>}
       <button className="btn" style={{ width:'100%', marginTop:8 }} disabled={busy}>{busy ? 'Taking you to payment…' : 'Continue to payment'}</button>
-      <p className="note">You'll complete payment securely on Payfast. Delivery is countrywide.</p>
+      <p className="note">You'll complete payment securely on Payfast. First delivery in December 2026, countrywide.</p>
     </form>
   );
 }
