@@ -58,6 +58,16 @@ export default function AdminHome() {
   }
   useEffect(() => { load(); }, []);
 
+  // Always use a LIVE token for writes. The token captured at page load expires
+  // after ~1h; reusing it made every save fail with "forbidden" once it went
+  // stale. getSession() returns a valid token, refreshing it if needed.
+  async function freshToken() {
+    const { data: s } = await supabase.auth.getSession();
+    const t = s.session?.access_token;
+    if (t) setToken(t);
+    return t || token;
+  }
+
   const members = data.members || [];
   const active = members.filter((m) => m.status === 'active');
   const paused = members.filter((m) => m.status === 'paused');
@@ -79,7 +89,7 @@ export default function AdminHome() {
     const isNew = !editing.id;
     const res = await fetch('/api/admin/members', {
       method: isNew ? 'POST' : 'PATCH',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type':'application/json' },
+      headers: { Authorization: `Bearer ${await freshToken()}`, 'Content-Type':'application/json' },
       body: JSON.stringify(isNew ? form : { id: editing.id, ...form }),
     });
     setSaving(false);
@@ -87,12 +97,12 @@ export default function AdminHome() {
   }
   async function removeMember() {
     if (!confirm(`Remove ${form.name}? This cannot be undone.`)) return;
-    await fetch(`/api/admin/members?id=${editing.id}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } });
+    await fetch(`/api/admin/members?id=${editing.id}`, { method:'DELETE', headers:{ Authorization:`Bearer ${await freshToken()}` } });
     setEditing(null); load();
   }
   async function subAction(action) {
     if (!confirm(`${action === 'resume' ? 'Resume' : action[0].toUpperCase()+action.slice(1)} this subscription in Payfast?`)) return;
-    const res = await fetch('/api/admin/subscription', { method:'POST', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ memberId: editing.id, action }) });
+    const res = await fetch('/api/admin/subscription', { method:'POST', headers:{ Authorization:`Bearer ${await freshToken()}`, 'Content-Type':'application/json' }, body: JSON.stringify({ memberId: editing.id, action }) });
     const j = await res.json();
     if (j.outcome === 'done') { setMsg(`Subscription ${action === 'resume' ? 'resumed' : action+'d'}.`); setForm((f)=>({ ...f, status: j.status })); load(); }
     else if (j.outcome === 'no_token') setMsg('No Payfast token saved for this member, add it first, then try again.');
@@ -117,7 +127,7 @@ export default function AdminHome() {
 
   async function syncDates() {
     setSyncing(true); setSyncMsg('Syncing…');
-    const res = await fetch('/api/admin/sync-subscriptions', { method:'POST', headers:{ Authorization:`Bearer ${token}` } });
+    const res = await fetch('/api/admin/sync-subscriptions', { method:'POST', headers:{ Authorization:`Bearer ${await freshToken()}` } });
     const j = await res.json().catch(()=>({}));
     setSyncing(false);
     if (res.ok) {
@@ -133,7 +143,7 @@ export default function AdminHome() {
     const amount = Number(payAmt);
     if (!amount || amount <= 0) { setMsg('Enter a valid amount.'); return; }
     if (!window.confirm(`Record a completed payment of R${amount} for ${form.name}? This adds to Payments received.`)) return;
-    const res = await fetch('/api/admin/payment', { method:'POST', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ member_id: editing.id, amount }) });
+    const res = await fetch('/api/admin/payment', { method:'POST', headers:{ Authorization:`Bearer ${await freshToken()}`, 'Content-Type':'application/json' }, body: JSON.stringify({ member_id: editing.id, amount }) });
     const j = await res.json().catch(()=>({}));
     if (res.ok) { setMsg(`✓ Payment of R${amount} recorded.`); setPayAmt(''); load(); }
     else setMsg(j.error || 'Could not record payment');
@@ -143,7 +153,7 @@ export default function AdminHome() {
     if (!editing?.id) return;
     if (!window.confirm('Run the welcome pipeline? This generates the discount code, creates the WooCommerce coupon, and adds the member to Mailchimp - which sends the welcome email.')) return;
     setOnboarding(true); setMsg('');
-    const res = await fetch('/api/admin/onboard', { method:'POST', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ id: editing.id }) });
+    const res = await fetch('/api/admin/onboard', { method:'POST', headers:{ Authorization:`Bearer ${await freshToken()}`, 'Content-Type':'application/json' }, body: JSON.stringify({ id: editing.id }) });
     const j = await res.json().catch(()=>({}));
     setOnboarding(false);
     if (res.ok) {
