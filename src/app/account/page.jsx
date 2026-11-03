@@ -37,9 +37,17 @@ export default function Account() {
   }, [router]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  // Use a live token for writes - the one captured at load expires after ~1h, which
+  // otherwise makes a later save/pause fail silently once the session has gone stale.
+  async function freshToken() {
+    const { data } = await supabase.auth.getSession();
+    const t = data.session?.access_token;
+    if (t) setToken(t);
+    return t || token;
+  }
   async function saveAddress() {
     setSaving(true); setMsg('');
-    const res = await fetch('/api/member/address', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await fetch('/api/member/address', { method: 'POST', headers: { Authorization: `Bearer ${await freshToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     setSaving(false);
     setMsg(res.ok ? 'Saved. Thank you.' : 'Something went wrong, please try again.');
     if (res.ok) setMember((m) => ({ ...m, ...form }));
@@ -47,14 +55,14 @@ export default function Account() {
   async function subAction(action) {
     const label = action === 'cancel' ? 'cancel' : action === 'pause' ? 'pause' : 'resume';
     if (!confirm(`Are you sure you want to ${label} your membership?`)) return;
-    const res = await fetch('/api/member/subscription', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+    const res = await fetch('/api/member/subscription', { method: 'POST', headers: { Authorization: `Bearer ${await freshToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
     const j = await res.json();
     if (j.ok && j.outcome === 'done') { setMsg(`Your membership has been ${label === 'resume' ? 'resumed' : label + 'd'}.`); setMember((m) => ({ ...m, status: action === 'cancel' ? 'cancelled' : action === 'pause' ? 'paused' : 'active' })); }
     else setMsg(`Your ${label} request has been received. We'll confirm it shortly.`);
   }
   async function toggleSkip(boxId, skip) {
     setUpcoming((bs) => bs.map((b) => b.id === boxId ? { ...b, skipped: skip } : b));
-    await fetch('/api/member/skip', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ boxId, skip }) }).catch(() => {});
+    await fetch('/api/member/skip', { method: 'POST', headers: { Authorization: `Bearer ${await freshToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ boxId, skip }) }).catch(() => {});
   }
   function copyCode() {
     if (!member?.discount_code) return;

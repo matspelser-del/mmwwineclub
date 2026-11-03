@@ -17,7 +17,7 @@ export async function POST(request) {
 
   const db = admin();
   const status = String(data.payment_status || '').toUpperCase();
-  const email = String(data.email_address || '').toLowerCase();
+  const email = String(data.email_address || '').trim().toLowerCase();
   const amount = parseFloat(data.amount_gross || data.amount || '0');
   const itemName = data.item_name || '';
   const token = data.token || null;
@@ -56,27 +56,78 @@ export async function POST(request) {
     postal_code: data.code || null,
   };
 
-  // find or create the member
+  // Find the member as robustly as possible. A pending member who pays later must
+  // reconnect to their existing record, never get duplicated. The old code matched
+  // on a single exact, case-sensitive email - so a stored "Tracy@Nomu.co.za" never
+  // matched the lowercased "tracy@nomu.co.za" from the ITN, a duplicate active
+  // record was created, and the original stayed pending. Match in order of
+  // reliability: subscription token (stable across recurring charges) -> email
+  // (case-insensitive) -> m_payment_id, which signup sets to the member's email.
+  // ilike treats % and _ as wildcards, and _ is legal in emails, so escape them.
+  const esc = (s) => s.replace(/([\\%_])/g, '\\$1');
+  const mpid = String(data.m_payment_id || '').trim().toLowerCase();
   let member = null;
-  if (email) {
-    const { data: existing } = await db.from('members').select('*').eq('email', email).maybeSingle();
-    if (existing) member = existing;
-    else {
-      const { data: created } = await db.from('members').insert({
-        email, name: name || email, tier,
-        status: status === 'COMPLETE' ? 'active' : 'pending',
-        payfast_token: token, start_date: new Date().toISOString().slice(0, 10),
-        ...(addr.addr_line1 ? addr : {}),
-      }).select('*').single();
-      member = created;
+  if (token) {
+    const { data: x } = await db.from('members').select('*').eq('payfast_token', token).maybeSingle();
+    if (x) member = x;
+  }
+  if (!member && email) {
+    const { data: x } = await db.from('members').select('*').ilike('email', esc(email)).maybeSingle();
+    if (x) member = x;
+  }
+  if (!member && mpid && mpid !== email) {
+    const { data: x } = await db.from('members').select('*').ilike('email', esc(mpid)).maybeSingle();
+    if (x) member = x;
+  }
+  // No existing member: this is a new signup. Promote their "showed interest"
+  // record if there is one - it holds the delivery address, phone and chosen plan
+  // that the Payfast notification usually lacks. Otherwise create from ITN data.
+  if (!member && (email || mpid)) {
+    let interest = null;
+    if (email) {
+      const { data: x } = await db.from('interests').select('*').ilike('email', esc(email)).maybeSingle();
+      if (x) interest = x;
+    }
+    if (!interest && mpid && mpid !== email) {
+      const { data: x } = await db.from('interests').select('*').ilike('email', esc(mpid)).maybeSingle();
+      if (x) interest = x;
+    }
+    const base = interest ? {
+      email: interest.email, name: interest.name || name || interest.email,
+      phone: interest.phone || null, tier: interest.tier || tier, seats: interest.seats || 1,
+      addr_line1: interest.addr_line1, addr_line2: interest.addr_line2, city: interest.city,
+      province: interest.province, postal_code: interest.postal_code, country: interest.country,
+    } : {
+      email: email || mpid, name: name || email || mpid, tier,
+      ...(addr.addr_line1 ? addr : {}),
+    };
+    const { data: created } = await db.from('members').insert({
+      ...base,
+      status: status === 'COMPLETE' ? 'active' : 'pending',
+      payfast_token: token, start_date: new Date().toISOString().slice(0, 10),
+    }).select('*').single();
+    member = created;
+    if (interest && created) {
+      await db.from('interests').update({ status: 'converted', converted_at: new Date().toISOString() }).eq('id', interest.id);
     }
   }
 
-  // log the payment
-  await db.from('payments').insert({
-    member_id: member ? member.id : null, amount, status: status.toLowerCase(),
-    payfast_payment_id: data.pf_payment_id || null, payfast_token: token, item_name: itemName, raw: data,
-  });
+  // Log the payment - but guard against Payfast re-sending the same ITN (it retries
+  // when it doesn't get a prompt 200, and the postback check adds latency). Without
+  // this, a retry inserts a second row for the same pf_payment_id and inflates
+  // "Payments received". Recurring charges have a new pf_payment_id each time, so
+  // this only de-dupes true retries, not real renewals.
+  let dupPayment = false;
+  if (data.pf_payment_id) {
+    const { data: existingPay } = await db.from('payments').select('id').eq('payfast_payment_id', data.pf_payment_id).maybeSingle();
+    if (existingPay) dupPayment = true;
+  }
+  if (!dupPayment) {
+    await db.from('payments').insert({
+      member_id: member ? member.id : null, amount, status: status.toLowerCase(),
+      payfast_payment_id: data.pf_payment_id || null, payfast_token: token, item_name: itemName, raw: data,
+    });
+  }
 
   if (member && status === 'COMPLETE') {
     const patch = { status: 'active', payfast_token: token };

@@ -13,13 +13,14 @@ export async function GET(request) {
   if (!(await gate(request))) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   const db = admin();
   const since = new Date(Date.now() - 14 * 864e5).toISOString();
-  const [m, p, e, itn] = await Promise.all([
+  const [m, p, e, itn, i] = await Promise.all([
     db.from('members').select('*').order('created_at', { ascending: false }),
     db.from('payments').select('*').order('created_at', { ascending: false }).limit(100),
     db.from('member_events').select('*').order('created_at', { ascending: false }).limit(100),
     db.from('itn_log').select('created_at,email,amount,result').neq('result', 'accepted').gte('created_at', since).order('created_at', { ascending: false }).limit(20),
+    db.from('interests').select('*').eq('status', 'interested').order('created_at', { ascending: false }),
   ]);
-  return NextResponse.json({ members: m.data || [], payments: p.data || [], events: e.data || [], itnFailures: itn.data || [] });
+  return NextResponse.json({ members: m.data || [], payments: p.data || [], events: e.data || [], itnFailures: itn.data || [], interests: i.data || [] });
 }
 
 const FIELDS = ['email','name','phone','tier','seats','status','payfast_token','start_date',
@@ -29,6 +30,9 @@ function clean(body) {
   const row = {};
   for (const f of FIELDS) if (f in body) row[f] = body[f] === '' ? null : body[f];
   if ('seats' in row && row.seats != null) row.seats = Number(row.seats) || 1;
+  // Normalise email so admin-added members match the lowercased emails the webhook
+  // looks up - stops case differences creating a duplicate on their first payment.
+  if (row.email) row.email = String(row.email).trim().toLowerCase();
   return row;
 }
 

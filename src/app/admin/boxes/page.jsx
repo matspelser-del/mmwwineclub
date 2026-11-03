@@ -8,6 +8,9 @@ const statusTone = { planning:'grey', confirmed:'blue', packing:'amber', shipped
 
 export default function Boxes(){
   const [token,setToken]=useState(null);
+  // Live token for writes - a token cached at load expires after ~1h and would make
+  // later saves fail with "forbidden".
+  async function freshToken(){ const { data }=await supabase.auth.getSession(); const t=data.session?.access_token; if(t) setToken(t); return t||token; }
   const [boxes,setBoxes]=useState([]);
   const [timeline,setTimeline]=useState([]);
   const [items,setItems]=useState([]);
@@ -28,32 +31,32 @@ export default function Boxes(){
 
   async function patchItem(id,patch){
     setItems(it=>it.map(x=>x.id===id?{...x,...patch}:x));
-    await fetch('/api/admin/box-items',{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
+    await fetch('/api/admin/box-items',{method:'PATCH',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
   }
   async function notifyShipped(boxId){
     if(!window.confirm('Tag every active member so your "Box On Its Way" email sends? Members who skipped this box are left out.')) return;
     setNotifying(boxId);
-    const res=await fetch('/api/admin/notify-box',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({box_id:boxId})});
+    const res=await fetch('/api/admin/notify-box',{method:'POST',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({box_id:boxId})});
     const j=await res.json().catch(()=>({}));
     setNotifying(null);
     setNotifyMsg(m=>({...m,[boxId]: res.ok ? `Tagged ${j.sent} member${j.sent===1?'':'s'}.${j.failed?.length?` ${j.failed.length} failed.`:''}` : (j.error||'Could not notify')}));
   }
 
   async function patchBox(id,patch){
-    await fetch('/api/admin/boxes',{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
+    await fetch('/api/admin/boxes',{method:'PATCH',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
     setBoxes(bs=>bs.map(b=>b.id===id?{...b,...patch}:b));
   }
   async function addMilestone(boxId){
     const v=nt[boxId]||{}; if(!v.title) return;
-    const res=await fetch('/api/admin/box-timeline',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({box_id:boxId,title:v.title,due_date:v.due_date||null})});
+    const res=await fetch('/api/admin/box-timeline',{method:'POST',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({box_id:boxId,title:v.title,due_date:v.due_date||null})});
     const j=await res.json(); setTimeline(t=>[...t,j.item]); setNt(n=>({...n,[boxId]:{}}));
   }
   async function toggleMilestone(m){
-    await fetch('/api/admin/box-timeline',{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id:m.id,done:!m.done})});
+    await fetch('/api/admin/box-timeline',{method:'PATCH',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({id:m.id,done:!m.done})});
     setTimeline(t=>t.map(x=>x.id===m.id?{...x,done:!m.done}:x));
   }
   async function delMilestone(id){
-    await fetch(`/api/admin/box-timeline?id=${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});
+    await fetch(`/api/admin/box-timeline?id=${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${await freshToken()}`}});
     setTimeline(t=>t.filter(x=>x.id!==id));
   }
 

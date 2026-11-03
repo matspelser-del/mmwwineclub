@@ -12,6 +12,9 @@ const displayName = (w)=> (w.format && w.format!=='750ml') ? `${w.name} (${w.for
 
 export default function Builder(){
   const [token,setToken]=useState(null);
+  // Live token for writes - a token cached at load expires after ~1h and would make
+  // later saves fail with "forbidden".
+  async function freshToken(){ const { data }=await supabase.auth.getSession(); const t=data.session?.access_token; if(t) setToken(t); return t||token; }
   const [boxes,setBoxes]=useState([]);
   const [items,setItems]=useState([]);
   const [wines,setWines]=useState([]);
@@ -57,32 +60,32 @@ export default function Builder(){
   async function addFromCatalogue(w){
     if(!boxId) return;
     const name=displayName(w);
-    const res=await fetch('/api/admin/box-items',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+    const res=await fetch('/api/admin/box-items',{method:'POST',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},
       body:JSON.stringify({box_id:boxId,kind:'wine',producer:'miles',name,vintage:w.vintage,qty:1,cost_price:w.cost_price,cellar_price:w.cellar_price})});
     const j=await res.json(); setItems(it=>[...it,j.item]);
   }
   async function addCustom(kind){
     if(!boxId || !custom.name) return;
-    const res=await fetch('/api/admin/box-items',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+    const res=await fetch('/api/admin/box-items',{method:'POST',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},
       body:JSON.stringify({box_id:boxId,kind,producer:custom.producer,name:custom.name,vintage:custom.vintage,qty:Number(custom.qty)||1,cost_price:Number(custom.cost_price)||0,cellar_price:Number(custom.cellar_price)||0})});
     const j=await res.json(); setItems(it=>[...it,j.item]); setCustom({name:'',vintage:'',cost_price:'',cellar_price:'',qty:1,producer:'other'});
   }
   async function patchItem(id,patch){
     setItems(it=>it.map(x=>x.id===id?{...x,...patch}:x));
-    await fetch('/api/admin/box-items',{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
+    await fetch('/api/admin/box-items',{method:'PATCH',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
   }
   async function delItem(id){
-    await fetch(`/api/admin/box-items?id=${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});
+    await fetch(`/api/admin/box-items?id=${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${await freshToken()}`}});
     setItems(it=>it.filter(x=>x.id!==id));
   }
   async function patchDelivery(v){
-    await fetch('/api/admin/boxes',{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id:boxId,delivery_fee:Number(v)||0})});
+    await fetch('/api/admin/boxes',{method:'PATCH',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({id:boxId,delivery_fee:Number(v)||0})});
     setBoxes(bs=>bs.map(b=>b.id===boxId?{...b,delivery_fee:Number(v)||0}:b));
   }
 
   async function printPackingList(){
     if(!boxId || !rows.length){ alert('Add wines to the box first.'); return; }
-    const res=await fetch('/api/admin/members',{headers:{Authorization:`Bearer ${token}`}});
+    const res=await fetch('/api/admin/members',{headers:{Authorization:`Bearer ${await freshToken()}`}});
     const j=await res.json().catch(()=>({}));
     const skippedIds=new Set(skips.filter(s=>s.box_id===boxId).map(s=>s.member_id));
     const receiving=(j.members||[]).filter(m=>m.status==='active' && !skippedIds.has(m.id));

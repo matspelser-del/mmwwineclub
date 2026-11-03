@@ -29,14 +29,18 @@ export async function POST(request) {
       return NextResponse.json({ error: left === 0 ? 'The launch lunch is fully booked.' : `Only ${left} launch lunch seat${left===1?'':'s'} left, please choose fewer.` }, { status: 409 });
     }
   }
+  // Write to interests, NOT members. Filling the form is interest, not membership.
+  // The member record is created only when a real payment arrives (see the webhook),
+  // which keeps the member list free of non-payers and duplicates.
   const row = {
-    email, name: b.name, phone: b.phone, tier: t.tier, seats: t.seats, status: 'pending',
+    email, name: b.name, phone: b.phone, plan: b.plan, tier: t.tier, seats: t.seats,
+    status: 'interested',
     addr_line1: b.addr_line1, addr_line2: b.addr_line2 || null, city: b.city,
     province: b.province || null, postal_code: b.postal_code, country: b.country || 'South Africa',
   };
-  // upsert on email so re-tries don't duplicate
-  const { data: existing } = await db.from('members').select('id').eq('email', email).maybeSingle();
-  if (existing) await db.from('members').update(row).eq('id', existing.id);
-  else await db.from('members').insert(row);
+  // upsert on email so re-submitting the form updates the same interest
+  const { data: existing } = await db.from('interests').select('id').eq('email', email).maybeSingle();
+  if (existing) await db.from('interests').update(row).eq('id', existing.id);
+  else await db.from('interests').insert(row);
   return NextResponse.json({ ok: true, amount: t.amount, item: t.item });
 }

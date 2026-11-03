@@ -48,6 +48,8 @@ export default function AdminHome() {
   const [payAmt, setPayAmt] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [tab, setTab] = useState('members');       // members | interest
+  const [convertingId, setConvertingId] = useState(null); // interest being promoted
 
   async function load() {
     const { data: s } = await supabase.auth.getSession();
@@ -69,6 +71,7 @@ export default function AdminHome() {
   }
 
   const members = data.members || [];
+  const interests = data.interests || [];
   const active = members.filter((m) => m.status === 'active');
   const paused = members.filter((m) => m.status === 'paused');
   const revenue = (data.payments || []).filter((p) => p.status === 'complete').reduce((s, p) => s + Number(p.amount || 0), 0);
@@ -80,9 +83,24 @@ export default function AdminHome() {
     `${m.name} ${m.email} ${m.city||''} ${m.discount_code||''}`.toLowerCase().includes(q.toLowerCase())
   ), [members, q]);
 
-  function openNew() { setForm({ ...BLANK }); setEditing({}); setMsg(''); }
-  function openEdit(m) { setForm({ ...BLANK, ...Object.fromEntries(Object.keys(BLANK).map((k)=>[k, m[k] ?? BLANK[k]])) }); setEditing(m); setMsg(''); }
+  function openNew() { setForm({ ...BLANK }); setEditing({}); setMsg(''); setConvertingId(null); }
+  function openEdit(m) { setForm({ ...BLANK, ...Object.fromEntries(Object.keys(BLANK).map((k)=>[k, m[k] ?? BLANK[k]])) }); setEditing(m); setMsg(''); setConvertingId(null); }
   const set = (k,v) => setForm((f)=>({ ...f, [k]: v }));
+
+  // Prefill the add-member form from an interest, so converting a lead by hand
+  // carries their details. On save we mark the interest converted (see save()).
+  function addInterestAsMember(i) {
+    setForm({ ...BLANK, name:i.name||'', email:i.email||'', phone:i.phone||'',
+      tier:i.tier||'club', seats:i.seats||1, status:'active',
+      addr_line1:i.addr_line1||'', addr_line2:i.addr_line2||'', city:i.city||'',
+      province:i.province||'', postal_code:i.postal_code||'', country:i.country||'South Africa' });
+    setConvertingId(i.id); setEditing({}); setMsg('');
+  }
+  async function removeInterest(id) {
+    if (!confirm('Remove this interest?')) return;
+    await fetch(`/api/admin/interests?id=${id}`, { method:'DELETE', headers:{ Authorization:`Bearer ${await freshToken()}` } });
+    load();
+  }
 
   async function save() {
     setSaving(true); setMsg('');
@@ -93,7 +111,13 @@ export default function AdminHome() {
       body: JSON.stringify(isNew ? form : { id: editing.id, ...form }),
     });
     setSaving(false);
-    if (res.ok) { setEditing(null); load(); } else { const j = await res.json().catch(()=>({})); setMsg(j.error || 'Could not save'); }
+    if (res.ok) {
+      if (convertingId) {
+        try { await fetch('/api/admin/interests', { method:'PATCH', headers:{ Authorization:`Bearer ${await freshToken()}`, 'Content-Type':'application/json' }, body: JSON.stringify({ id: convertingId }) }); } catch {}
+        setConvertingId(null);
+      }
+      setEditing(null); load();
+    } else { const j = await res.json().catch(()=>({})); setMsg(j.error || 'Could not save'); }
   }
   async function removeMember() {
     if (!confirm(`Remove ${form.name}? This cannot be undone.`)) return;
@@ -196,6 +220,11 @@ export default function AdminHome() {
         </div>
       </div>
 
+      <div className="seg" style={{ display:'flex', gap:8, margin:'2px 0 18px', flexWrap:'wrap' }}>
+        <button className={tab==='members'?'btn':'btn ghost'} onClick={()=>setTab('members')}>Members ({members.length})</button>
+        <button className={tab==='interest'?'btn':'btn ghost'} onClick={()=>setTab('interest')}>Showed interest ({interests.length})</button>
+      </div>
+
       {syncMsg && (
         <div style={{ background:'var(--bg)', border:'1px solid var(--line)', borderRadius:12, padding:'12px 16px', marginBottom:18, display:'flex', justifyContent:'space-between', gap:12, alignItems:'flex-start' }}>
           <span className="hint" style={{ color: syncMsg.includes('failed') ? 'var(--red)' : 'var(--ink)' }}>{syncMsg}</span>
@@ -203,6 +232,7 @@ export default function AdminHome() {
         </div>
       )}
 
+      {tab==='members' && (<>
       <div className="stats stagger">
         <div className="stat"><div className="l">Active members</div><div className="v"><CountUp value={active.length} /></div></div>
         <div className="stat"><div className="l">Paused</div><div className="v"><CountUp value={paused.length} /></div></div>
@@ -234,6 +264,28 @@ export default function AdminHome() {
             </div>
           );})}
       </div>
+      </>)}
+
+      {tab==='interest' && (
+        <div className="card subs">
+          <div className="rowh"><div>Name</div><div>Phone</div><div>Plan</div><div>Address</div><div>When · action</div></div>
+          {interests.length === 0 ? <div className="empty">No one on the interest list yet.</div> :
+            interests.map((i) => (
+              <div className="row" key={i.id} style={{ cursor:'default' }}>
+                <div><div className="nm">{i.name||'—'}</div><div className="sub">{i.email}</div></div>
+                <div className="sub">{i.phone||'—'}</div>
+                <div><span className={`badge ${i.tier==='lunch'?'red':'blue'}`}><span className="dot" />{i.tier==='lunch'?`Lunch ×${i.seats||1}`:'Club'}</span></div>
+                <div className="sub">{i.addr_line1 ? `${i.addr_line1}${i.addr_line2?', '+i.addr_line2:''}, ${i.city||''} ${i.postal_code||''}` : '— not provided —'}</div>
+                <div className="sub">{shortDate(i.created_at)}<br/>
+                  <span style={{ display:'inline-flex', gap:6, marginTop:4, flexWrap:'wrap' }}>
+                    <button className="btn sm" onClick={()=>addInterestAsMember(i)}>Add as member</button>
+                    <button className="btn sm ghost" onClick={()=>removeInterest(i.id)}>Remove</button>
+                  </span>
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
 
       {editing && (
         <div className="pf-overlay open" onMouseDown={()=>setEditing(null)}>
