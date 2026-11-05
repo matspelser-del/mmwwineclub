@@ -91,7 +91,7 @@ export default function Account() {
                 {member.start_date ? ` · member since ${new Date(member.start_date).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })}` : ''}
               </p>
               {member.discount_code && (
-                <p className="muted" style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                <p className="muted flex-row">
                   Your member discount code: <span className="code">{member.discount_code}</span>
                   <button className="btn ghost sm" onClick={copyCode} style={{ padding:'4px 12px' }}>{copied ? 'Copied' : 'Copy'}</button>
                 </p>
@@ -119,9 +119,9 @@ export default function Account() {
             <div className="dark-card">
               {upcoming.length === 0 ? <p className="muted">The schedule will appear here soon.</p> :
                 upcoming.map((b) => (
-                  <div key={b.id} style={{ padding:'12px 0', borderBottom:'1px solid #2c2a27' }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', gap:12 }}>
-                      <div style={{ minWidth:0 }}>
+                  <div key={b.id} className="list-row">
+                    <div className="between">
+                      <div className="min0">
                         <b style={{ color: b.skipped ? '#8f877c' : '#efeae3' }}>{b.label}</b>
                         {b.member_note ? <div className="muted" style={{ fontSize:13, marginTop:2 }}>{b.member_note}</div> : null}
                       </div>
@@ -161,8 +161,8 @@ export default function Account() {
             {SHOP_URL && (
               <>
                 <h2>Shop our wines</h2>
-                <div className="dark-card" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:14, flexWrap:'wrap' }}>
-                  <div style={{ minWidth:0 }}>
+                <div className="dark-card between">
+                  <div className="min0">
                     <h3 style={{ marginBottom:4 }}>Between boxes?</h3>
                     <p className="muted" style={{ margin:0 }}>Browse the full range and order anytime. Your member discount code works at checkout.</p>
                   </div>
@@ -174,7 +174,7 @@ export default function Account() {
             <h2>Manage your subscription</h2>
             <div className="dark-card">
               <p className="muted" style={{ marginBottom: 16 }}>Need a break or want to stop? You can pause or cancel here.</p>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div className="flex-row">
                 {member.status === 'paused'
                   ? <button className="btn ghost" onClick={() => subAction('resume')}>Resume</button>
                   : <button className="btn ghost" onClick={() => subAction('pause')}>Pause</button>}

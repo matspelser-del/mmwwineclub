@@ -198,11 +198,11 @@ export default function AdminHome() {
   return (
     <>
       {itnFailures.length > 0 && (
-        <div style={{ background:'var(--red-soft)', border:'1px solid var(--red)', borderRadius:12, padding:'14px 18px', marginBottom:20 }}>
-          <div style={{ fontWeight:600, color:'var(--red)', marginBottom:6 }}>⚠ {itnFailures.length} payment notification{itnFailures.length===1?'':'s'} failed verification in the last 14 days</div>
-          <div className="hint" style={{ marginBottom:8 }}>Payfast sent these but the app rejected them, so the member may be stuck on pending. Find the member below, open them, and use "Onboard &amp; send welcome".</div>
+        <div className="banner red">
+          <div className="banner-title">⚠ {itnFailures.length} payment notification{itnFailures.length===1?'':'s'} failed verification in the last 14 days</div>
+          <div className="hint mb-sm">Payfast sent these but the app rejected them, so the member may be stuck on pending. Find the member below, open them, and use "Onboard &amp; send welcome".</div>
           {itnFailures.slice(0,5).map((f,i)=>(
-            <div key={i} className="sub" style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+            <div key={i} className="sub flex-row">
               <span className="code">{f.email||'—'}</span>
               <span>{rand(f.amount||0)}</span>
               <span style={{ color:'var(--red)' }}>{f.result}</span>
@@ -211,22 +211,22 @@ export default function AdminHome() {
           ))}
         </div>
       )}
-      <div className="head" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:12 }}>
+      <div className="head between">
         <div><h1>Subscriptions</h1><p>{members.length} members · {active.length} active</p></div>
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        <div className="flex-row">
           <button className="btn ghost" onClick={syncDates} disabled={syncing}>{syncing?'Syncing…':'Sync next payment dates'}</button>
           <button className="btn ghost" onClick={exportDelivery} disabled={active.length===0}>Export delivery CSV</button>
           <button className="btn" onClick={openNew}>+ Add member</button>
         </div>
       </div>
 
-      <div className="seg" style={{ display:'flex', gap:8, margin:'2px 0 18px', flexWrap:'wrap' }}>
+      <div className="seg flex-row mb-md">
         <button className={tab==='members'?'btn':'btn ghost'} onClick={()=>setTab('members')}>Members ({members.length})</button>
         <button className={tab==='interest'?'btn':'btn ghost'} onClick={()=>setTab('interest')}>Showed interest ({interests.length})</button>
       </div>
 
       {syncMsg && (
-        <div style={{ background:'var(--bg)', border:'1px solid var(--line)', borderRadius:12, padding:'12px 16px', marginBottom:18, display:'flex', justifyContent:'space-between', gap:12, alignItems:'flex-start' }}>
+        <div className="banner between">
           <span className="hint" style={{ color: syncMsg.includes('failed') ? 'var(--red)' : 'var(--ink)' }}>{syncMsg}</span>
           <button className="x" onClick={()=>setSyncMsg('')} aria-label="Dismiss">×</button>
         </div>

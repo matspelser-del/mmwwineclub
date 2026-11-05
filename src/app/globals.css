@@ -1,14 +1,21 @@
 :root{
-  --ink:#141414; --bg:#f6f5f3; --card:#fff; --line:#e7e3de; --muted:#77736e;
+  --ink:#141414; --bg:#f6f5f3; --card:#fff; --line:#e7e3de; --muted:#6b6660;
   --red:#952B2A; --red-soft:#f3e7e6; --green:#2f7d5b; --green-soft:#e6f1eb;
   --amber:#b8791f; --amber-soft:#f6ecdb; --grey:#8a857f; --grey-soft:#eeecea; --blue:#3a6491; --blue-soft:#e6edf5;
   --serif:"Montserrat",-apple-system,Segoe UI,Roboto,sans-serif; --sans:"Montserrat",-apple-system,Segoe UI,Roboto,sans-serif;
   --dur-fast:120ms; --dur-normal:200ms; --ease-out:cubic-bezier(.22,1,.36,1);
+  /* spacing scale (4px base) - use these instead of ad-hoc px for consistent rhythm */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px; --s8:40px;
+  /* radius scale */
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* focus ring for keyboard navigation */
+  --focus:0 0 0 3px var(--red-soft);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 button,input,select{font:inherit;color:inherit}
+input[type=radio],input[type=checkbox]{accent-color:var(--red)}
 h1,h2,h3{font-family:var(--serif);font-weight:700;letter-spacing:-.02em;line-height:1.15}
 
 /* ---------- shared bits ---------- */
@@ -29,6 +36,9 @@ h1,h2,h3{font-family:var(--serif);font-weight:700;letter-spacing:-.02em;line-hei
 .select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2377736e'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px}
 input[type=number].input{appearance:textfield;-moz-appearance:textfield}
 .field{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+/* keyboard focus - visible ring for interactive elements that only had :hover before */
+.btn:focus-visible,.nav a:focus-visible,a.link:focus-visible,.x:focus-visible,.hamburger:focus-visible,.pf-close:focus-visible,.wine-pick:focus-visible,.boxcard-top:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.input:focus-visible,.select:focus-visible{outline:none}
 
 /* ---------- admin (light) ---------- */
 .shell{display:flex;min-height:100vh}
@@ -109,6 +119,7 @@ input[type=number].input{appearance:textfield;-moz-appearance:textfield}
 .site .code{background:#141414;color:#efeae3}
 .site a.link{color:var(--red);text-decoration:underline}
 .note{font-size:13px;color:#9b938a;margin-top:10px}
+.site .list-row{padding:var(--s3) 0;border-bottom:1px solid #2c2a27}
 .center{min-height:100vh;display:grid;place-items:center;color:var(--muted)}
 
 /* ---------- admin edit modal ---------- */
@@ -141,9 +152,22 @@ input[type=number].input{appearance:textfield;-moz-appearance:textfield}
 @media(max-width:560px){.tl-add{grid-template-columns:1fr}}
 
 /* ---------- shared utilities (were missing -> cramped cards) ---------- */
-.pad{padding:22px}
+.pad{padding:var(--s6)}
 .rows{display:block}
 .r{display:flex;align-items:center;justify-content:flex-end;text-align:right}
+/* layout helpers - replace repeated inline flex/spacing so rhythm stays consistent */
+.between{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex-wrap:wrap}
+.flex-row{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap}
+.flex-end{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3)}
+.stack{display:flex;flex-direction:column;gap:var(--s4)}
+.stack-sm{display:flex;flex-direction:column;gap:var(--s2)}
+.min0{min-width:0}
+.mt-sm{margin-top:var(--s3)} .mt-md{margin-top:var(--s5)} .mt-lg{margin-top:var(--s7)}
+.mb-sm{margin-bottom:var(--s3)} .mb-md{margin-bottom:var(--s5)} .mb-lg{margin-bottom:var(--s7)}
+/* inline notice banner - one style for the dashboard's status/alert strips */
+.banner{border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s4) var(--s5);margin-bottom:var(--s5);background:var(--card)}
+.banner.red{background:var(--red-soft);border-color:var(--red)}
+.banner-title{font-weight:600;color:var(--red);margin-bottom:var(--s1)}
 .x{background:none;border:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .12s ease,background .12s ease}
 .x:hover{color:var(--red);background:var(--red-soft)}
 

@@ -18,6 +18,12 @@ create table if not exists interests (
 -- One interest per email; a re-submitted form updates the same row.
 create unique index if not exists interests_email_key on interests (lower(email));
 
+-- Enable RLS (consistent with every other table). No policies are defined, so the
+-- public anon/authenticated keys get NO direct access - the app reaches this table
+-- only through the server's service-role key, which bypasses RLS. This keeps leads'
+-- names, emails, phones and addresses out of reach of the browser anon key.
+alter table interests enable row level security;
+
 -- Optional: move existing pending members into interests, then remove them from
 -- members so the member list holds only paid members. Review first, then run this
 -- block on its own if you want the cleanup. It skips anyone with a payfast_token
