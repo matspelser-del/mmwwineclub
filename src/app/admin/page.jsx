@@ -15,14 +15,14 @@ function Donut({ club, lunch }) {
   return (
     <div style={{display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
       <svg width="140" height="140" viewBox="0 0 140 140">
-        <circle cx="70" cy="70" r={R} fill="none" stroke="#efeae3" strokeWidth={sw}/>
-        {seg(club,0,'#3a6491')}{seg(lunch,club,'#952B2A')}
-        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="700" fill="#1a1a1a" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
-        <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#77736e">active</text>
+        <circle cx="70" cy="70" r={R} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth={sw}/>
+        {seg(club,0,'#7f9a63')}{seg(lunch,club,'#c2413a')}
+        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="800" fill="#f5efe9" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
+        <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#a79d95">active</text>
       </svg>
       <div style={{display:'flex',flexDirection:'column',gap:12,minWidth:170}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#3a6491'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(club/total*100):0}%</span></div>
-        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#952B2A'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(lunch/total*100):0}%</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#7f9a63'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(club/total*100):0}%</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#c2413a'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(lunch/total*100):0}%</span></div>
       </div>
     </div>
   );
@@ -233,10 +233,16 @@ export default function AdminHome() {
       )}
 
       {tab==='members' && (<>
+      <div className="ov-hero">
+        <div className="lab">Payments received</div>
+        <div className="big">{rand(revenue)}</div>
+        <div style={{color:'rgba(255,255,255,.72)',fontSize:13,fontWeight:500,marginTop:3}}>{active.length} active members · {members.length} total</div>
+      </div>
+
       <div className="stats stagger">
         <div className="stat"><div className="l">Active members</div><div className="v"><CountUp value={active.length} /></div></div>
         <div className="stat"><div className="l">Paused</div><div className="v"><CountUp value={paused.length} /></div></div>
-        <div className="stat"><div className="l">Payments received</div><div className="v">{rand(revenue)}</div></div>
+        <div className="stat"><div className="l">Showed interest</div><div className="v"><CountUp value={interests.length} /></div></div>
         <div className="stat"><div className="l">Requests to action</div><div className="v"><CountUp value={pendingReq.length} /></div></div>
       </div>
 

@@ -84,19 +84,25 @@ export default function Account() {
           <p>We couldn't find a membership for this email yet. If you've just joined, give it a few minutes, or reply to your welcome email and we'll sort it out.</p>
         ) : (
           <>
-            <div className="dark-card">
-              <h3>{member.tier === 'lunch' ? 'The Club + Launch Lunch' : 'The Family Wine Club'}</h3>
-              <p className="muted" style={{ marginBottom: 10 }}>
-                Status: <b style={{ color: '#efeae3', textTransform: 'capitalize' }}>{member.status}</b>
-                {member.start_date ? ` · member since ${new Date(member.start_date).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })}` : ''}
-              </p>
-              {member.discount_code && (
-                <p className="muted flex-row">
-                  Your member discount code: <span className="code">{member.discount_code}</span>
-                  <button className="btn ghost sm" onClick={copyCode} style={{ padding:'4px 12px' }}>{copied ? 'Copied' : 'Copy'}</button>
-                </p>
-              )}
+            <div className="mhero">
+              <div className="between" style={{ alignItems:'flex-start' }}>
+                <div className="min0">
+                  <div className="lab">Your membership</div>
+                  <h3>{member.tier === 'lunch' ? 'The Club + Launch Lunch' : 'The Family Wine Club'}</h3>
+                  <div className="meta">{member.start_date ? `Member since ${new Date(member.start_date).toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}` : 'Welcome to the club'}</div>
+                </div>
+                <span className="mpill">{member.status}</span>
+              </div>
             </div>
+            {member.discount_code && (
+              <div className="dark-card between">
+                <span className="muted">Your member discount code</span>
+                <span className="flex-row">
+                  <span className="code">{member.discount_code}</span>
+                  <button className="btn ghost sm" onClick={copyCode} style={{ padding:'6px 14px' }}>{copied ? 'Copied' : 'Copy'}</button>
+                </span>
+              </div>
+            )}
 
             <h2>Delivery address</h2>
             <p className="muted" style={{ marginBottom: 16 }}>This is where your boxes go. Keep it up to date.</p>
@@ -127,11 +133,6 @@ export default function Account() {
                       </div>
                       <span className="muted" style={{ fontSize:13, whiteSpace:'nowrap' }}>{b.skipped ? 'Skipped' : (STATUS_LABEL[b.status] || '')}</span>
                     </div>
-                    {member.status === 'active' && (
-                      <button className="btn ghost sm" style={{ marginTop:10, padding:'6px 14px' }} onClick={() => toggleSkip(b.id, !b.skipped)}>
-                        {b.skipped ? 'Un-skip this box' : 'Skip this box'}
-                      </button>
-                    )}
                   </div>
                 ))}
             </div>
@@ -171,15 +172,9 @@ export default function Account() {
               </>
             )}
 
-            <h2>Manage your subscription</h2>
+            <h2>Need to make a change?</h2>
             <div className="dark-card">
-              <p className="muted" style={{ marginBottom: 16 }}>Need a break or want to stop? You can pause or cancel here.</p>
-              <div className="flex-row">
-                {member.status === 'paused'
-                  ? <button className="btn ghost" onClick={() => subAction('resume')}>Resume</button>
-                  : <button className="btn ghost" onClick={() => subAction('pause')}>Pause</button>}
-                {member.status !== 'cancelled' && <button className="btn ghost" onClick={() => subAction('cancel')}>Cancel membership</button>}
-              </div>
+              <p className="muted" style={{ margin:0 }}>To pause your membership, skip a box, or cancel, email us at <a className="link" href="mailto:admin@milesmossopwines.com">admin@milesmossopwines.com</a> and we'll take care of it for you.</p>
             </div>
           </>
         )}
