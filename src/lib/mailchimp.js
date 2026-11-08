@@ -35,14 +35,22 @@ export async function addToAudience({ email, name, discountCode, tier, seats }) 
   //    don't send, or no DISCOUNT merge tag, Mailchimp 400s the whole thing and the
   //    contact is never created. So on a 400, retry with just the email so the
   //    contact still gets created, then the discount is carried by the tag/journey.
+  // Use an explicit `status: subscribed`, not `status_if_new`. status_if_new only
+  // affects brand-new contacts, so an existing ARCHIVED or dormant contact (this
+  // list has hundreds) stays archived - the write 200s but the person never
+  // reactivates and never enters the welcome automation. An explicit status
+  // reactivates them. A contact who genuinely unsubscribed or hard-bounced can't be
+  // force-subscribed (Mailchimp returns 400) - we catch that and fall back to a
+  // status-free update that leaves their opt-out intact.
   let put = await upsert({
     email_address: addr,
-    status_if_new: 'subscribed',   // only sets status for brand-new contacts; never resubscribes
+    status: 'subscribed',
     merge_fields: { FNAME: parts[0] || '', LNAME: parts.slice(1).join(' '), DISCOUNT: discountCode || '' },
   });
   if (put.status === 400) {
     const detail = await put.text();
-    console.warn('Mailchimp merge-field upsert 400, retrying without merge fields:', detail);
+    console.warn('Mailchimp subscribed-upsert 400, retrying without forced status/merge fields:', detail);
+    // Covers a missing/required merge field AND a compliance block (unsub/cleaned).
     put = await upsert({ email_address: addr, status_if_new: 'subscribed' });
     if (!put.ok) throw new Error('Mailchimp upsert ' + put.status + ' ' + (await put.text()) + ' | first attempt: ' + detail);
   } else if (!put.ok) {
