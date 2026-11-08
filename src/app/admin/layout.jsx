@@ -26,7 +26,7 @@ export default function AdminLayout({ children }) {
 
   const nav = (
     <>
-      <div className="brand"><img src="/logo-white.png" alt="Miles Mossop Wines" /></div>
+      <div className="brand"><img src="/logo-red.png" alt="Miles Mossop Wines" /></div>
       <div style={{ fontSize: 11, color: 'var(--muted)', padding: '0 6px 14px', letterSpacing: '.12em', textTransform: 'uppercase' }}>Wine Club</div>
       <nav className="nav">
         <a href="/admin" className={cls('/admin')}>Subscriptions</a>
@@ -44,7 +44,7 @@ export default function AdminLayout({ children }) {
         <button className="hamburger" aria-label="Menu" onClick={() => setOpen(true)}>
           <span /><span /><span />
         </button>
-        <img src="/logo-white.png" alt="Miles Mossop Wines" style={{ height: 24 }} />
+        <img src="/logo-red.png" alt="Miles Mossop Wines" style={{ height: 24 }} />
       </div>
       <div className={`drawer-scrim${open ? ' open' : ''}`} onClick={() => setOpen(false)} />
       <aside className={`sidebar${open ? ' open' : ''}`}>{nav}</aside>

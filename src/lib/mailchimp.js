@@ -22,22 +22,32 @@ export async function addToAudience({ email, name, discountCode, tier, seats }) 
   if (!key || !dc || !audience) throw new Error('Mailchimp not configured');
 
   const addr = String(email || '').trim().toLowerCase();
+  if (!addr || !addr.includes('@')) throw new Error('Mailchimp add skipped: no valid email');
   const hash = createHash('md5').update(addr).digest('hex');
   const parts = String(name || '').trim().split(' ');
   const auth = 'Basic ' + Buffer.from('any:' + key).toString('base64');
   const base = `https://${dc}.api.mailchimp.com/3.0/lists/${audience}/members/${hash}`;
+  const headers = { Authorization: auth, 'Content-Type': 'application/json' };
 
-  // 1. upsert contact + merge fields
-  const put = await fetch(base, {
-    method: 'PUT',
-    headers: { Authorization: auth, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email_address: addr,
-      status_if_new: 'subscribed',   // only sets status for brand-new contacts; never resubscribes
-      merge_fields: { FNAME: parts[0] || '', LNAME: parts.slice(1).join(' '), DISCOUNT: discountCode || '' },
-    }),
+  const upsert = (body) => fetch(base, { method: 'PUT', headers, body: JSON.stringify(body) });
+
+  // 1. upsert contact + merge fields. If the audience has required merge fields we
+  //    don't send, or no DISCOUNT merge tag, Mailchimp 400s the whole thing and the
+  //    contact is never created. So on a 400, retry with just the email so the
+  //    contact still gets created, then the discount is carried by the tag/journey.
+  let put = await upsert({
+    email_address: addr,
+    status_if_new: 'subscribed',   // only sets status for brand-new contacts; never resubscribes
+    merge_fields: { FNAME: parts[0] || '', LNAME: parts.slice(1).join(' '), DISCOUNT: discountCode || '' },
   });
-  if (!put.ok) throw new Error('Mailchimp upsert ' + put.status + ' ' + (await put.text()));
+  if (put.status === 400) {
+    const detail = await put.text();
+    console.warn('Mailchimp merge-field upsert 400, retrying without merge fields:', detail);
+    put = await upsert({ email_address: addr, status_if_new: 'subscribed' });
+    if (!put.ok) throw new Error('Mailchimp upsert ' + put.status + ' ' + (await put.text()) + ' | first attempt: ' + detail);
+  } else if (!put.ok) {
+    throw new Error('Mailchimp upsert ' + put.status + ' ' + (await put.text()));
+  }
 
   // 2. apply tags as their own event (fires the automation trigger)
   const tags = ['Wine Club', tierTag(tier, seats)].map((name) => ({ name, status: 'active' }));

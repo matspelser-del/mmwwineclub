@@ -61,7 +61,7 @@ function Form() {
   return (
     <form onSubmit={submit}>
       <div className="dark-card" style={{ borderLeft:'3px solid #952B2A', marginBottom:16 }}>
-        <b style={{ color:'#efeae3' }}>First delivery: December 2026</b>
+        <b style={{ color:'var(--ink)' }}>First delivery: December 2026</b>
         <br/><span className="muted" style={{ fontSize:14 }}>Join now to hold your place. Your first box is delivered in December, then once a quarter after that.</span>
       </div>
 
@@ -73,7 +73,7 @@ function Form() {
           return (
             <label key={k} style={{ display:'flex', gap:10, alignItems:'flex-start', padding:'10px 0', cursor: disabled?'not-allowed':'pointer', opacity: disabled?0.45:1 }}>
               <input type="radio" name="plan" checked={plan===k} disabled={disabled} onChange={()=>setPlan(k)} style={{ marginTop:4 }} />
-              <span><b style={{ color:'#efeae3' }}>{v.label}</b>{disabled && <span className="muted"> — full</span>}<br/><span className="muted">{v.sub}</span></span>
+              <span><b style={{ color:'var(--ink)' }}>{v.label}</b>{disabled && <span className="muted"> — full</span>}<br/><span className="muted">{v.sub}</span></span>
             </label>
           );
         })}
@@ -111,7 +111,7 @@ function Form() {
 export default function Signup() {
   return (
     <div className="site">
-      <img className="logo" src="/logo-white.png" alt="Miles Mossop Wines" />
+      <img className="logo" src="/logo-red.png" alt="Miles Mossop Wines" />
       <div className="panel">
         <div className="eyebrow">The Family Wine Club</div>
         <h1>Join the club</h1>

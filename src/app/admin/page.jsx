@@ -15,14 +15,14 @@ function Donut({ club, lunch }) {
   return (
     <div style={{display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
       <svg width="140" height="140" viewBox="0 0 140 140">
-        <circle cx="70" cy="70" r={R} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth={sw}/>
-        {seg(club,0,'#7f9a63')}{seg(lunch,club,'#c2413a')}
-        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="800" fill="#f5efe9" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
-        <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#a79d95">active</text>
+        <circle cx="70" cy="70" r={R} fill="none" stroke="#efeae3" strokeWidth={sw}/>
+        {seg(club,0,'#5f7d49')}{seg(lunch,club,'#9e2b2b')}
+        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="700" fill="#1a1a1a" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
+        <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#77736e">active</text>
       </svg>
       <div style={{display:'flex',flexDirection:'column',gap:12,minWidth:170}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#7f9a63'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(club/total*100):0}%</span></div>
-        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#c2413a'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(lunch/total*100):0}%</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#5f7d49'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(club/total*100):0}%</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#9e2b2b'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(lunch/total*100):0}%</span></div>
       </div>
     </div>
   );
@@ -78,6 +78,22 @@ export default function AdminHome() {
   const clubActive = active.filter((m)=>m.tier!=='lunch').length;
   const lunchActive = active.filter((m)=>m.tier==='lunch').length;
   const pendingReq = (data.events || []).filter((e) => e.outcome === 'pending' || e.outcome === 'no_token');
+
+  // Revenue by month (last 6) from completed payments - drives the hero sparkline + trend chart.
+  const monthly = useMemo(() => {
+    const now = new Date(); const months = [];
+    for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ y: d.getFullYear(), m: d.getMonth(), label: d.toLocaleDateString('en-ZA', { month: 'short' }), total: 0 }); }
+    (data.payments || []).filter((p) => p.status === 'complete').forEach((p) => {
+      const d = new Date(p.created_at); const slot = months.find((x) => x.y === d.getFullYear() && x.m === d.getMonth());
+      if (slot) slot.total += Number(p.amount || 0);
+    });
+    return months;
+  }, [data.payments]);
+  const chMax = Math.max(1, ...monthly.map((m) => m.total));
+  const chPts = monthly.map((m, i) => [20 + i * 112, 180 - (m.total / chMax) * 150]);
+  const chLine = 'M' + chPts.map((p) => `${p[0]},${p[1].toFixed(1)}`).join(' L');
+  const chArea = `${chLine} L${chPts[5][0]},180 L20,180 Z`;
 
   const filtered = useMemo(() => members.filter((m) =>
     `${m.name} ${m.email} ${m.city||''} ${m.discount_code||''}`.toLowerCase().includes(q.toLowerCase())
@@ -233,10 +249,27 @@ export default function AdminHome() {
       )}
 
       {tab==='members' && (<>
-      <div className="ov-hero">
-        <div className="lab">Payments received</div>
-        <div className="big">{rand(revenue)}</div>
-        <div style={{color:'rgba(255,255,255,.72)',fontSize:13,fontWeight:500,marginTop:3}}>{active.length} active members · {members.length} total</div>
+      <div className="ov-grid">
+        <div className="ov-hero">
+          <div className="lab">Payments received</div>
+          <div className="big">{rand(revenue)}</div>
+          <div className="sub">{active.length} active members · {members.length} total</div>
+          <div className="spark">
+            {monthly.map((m, i) => (
+              <i key={i} className={i === 5 ? 'cur' : ''} style={{ '--h': Math.max(5, Math.round(m.total / chMax * 100)) + '%', animationDelay: (i * 80) + 'ms' }} />
+            ))}
+          </div>
+        </div>
+        <div className="ov-chart">
+          <div className="ch-h"><h3>Revenue trend</h3><span>Last 6 months</span></div>
+          <svg viewBox="0 0 600 200" width="100%" height="150" preserveAspectRatio="none" style={{ display:'block' }}>
+            <defs><linearGradient id="ovgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--red-bright)" stopOpacity="0.28" /><stop offset="1" stopColor="var(--red-bright)" stopOpacity="0" /></linearGradient></defs>
+            <path className="ov-area" d={chArea} />
+            <path className="ov-line" d={chLine} />
+            <circle className="ov-dot" cx={chPts[5][0]} cy={chPts[5][1]} r="5" />
+          </svg>
+          <div className="ov-xlabels">{monthly.map((m, i) => <span key={i}>{m.label}</span>)}</div>
+        </div>
       </div>
 
       <div className="stats stagger">

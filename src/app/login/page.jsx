@@ -18,13 +18,13 @@ export default function Login() {
 
   return (
     <div className="site">
-      <img className="logo" src="/logo-white.png" alt="Miles Mossop Wines" />
+      <img className="logo" src="/logo-red.png" alt="Miles Mossop Wines" />
       <div className="panel" style={{ maxWidth: 420 }}>
         <div className="eyebrow">The Family Wine Club</div>
         <h1>Member login</h1>
         {sent ? (
           <>
-            <p>Check your email - we've sent a sign-in link to <b style={{ color: '#efeae3' }}>{email}</b>. Tap it on this device and you'll land straight in your account.</p>
+            <p>Check your email - we've sent a sign-in link to <b style={{ color: 'var(--ink)' }}>{email}</b>. Tap it on this device and you'll land straight in your account.</p>
             <p className="note" style={{ marginTop: 14 }}>
               Wrong email? <a className="link" style={{ cursor: 'pointer' }} onClick={() => { setSent(false); setErr(''); }}>Try another</a>
             </p>

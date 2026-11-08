@@ -75,7 +75,7 @@ export default function Account() {
 
   return (
     <div className="site">
-      <img className="logo" src="/logo-white.png" alt="Miles Mossop Wines" />
+      <img className="logo" src="/logo-red.png" alt="Miles Mossop Wines" />
       <div className="panel">
         <div className="eyebrow">The Family Wine Club</div>
         <h1>Your membership</h1>
@@ -128,7 +128,7 @@ export default function Account() {
                   <div key={b.id} className="list-row">
                     <div className="between">
                       <div className="min0">
-                        <b style={{ color: b.skipped ? '#8f877c' : '#efeae3' }}>{b.label}</b>
+                        <b style={{ color: b.skipped ? '#8f877c' : 'var(--ink)' }}>{b.label}</b>
                         {b.member_note ? <div className="muted" style={{ fontSize:13, marginTop:2 }}>{b.member_note}</div> : null}
                       </div>
                       <span className="muted" style={{ fontSize:13, whiteSpace:'nowrap' }}>{b.skipped ? 'Skipped' : (STATUS_LABEL[b.status] || '')}</span>
@@ -143,12 +143,12 @@ export default function Account() {
                 <div className="dark-card">
                   {past.map((b) => (
                     <div key={b.id} style={{ padding:'4px 0 16px', borderBottom:'1px solid #2c2a27', marginBottom:14 }}>
-                      <b style={{ color:'#efeae3' }}>{b.label} edition</b>
+                      <b style={{ color:'var(--ink)' }}>{b.label} edition</b>
                       {b.wines.length === 0 ? <p className="muted" style={{ fontSize:13, marginTop:6 }}>Line-up coming soon.</p> :
                         <div style={{ marginTop:8 }}>
                           {b.wines.map((w, i) => (
                             <div key={i} style={{ padding:'7px 0', borderTop: i ? '1px solid #242220' : 'none' }}>
-                              <span style={{ color:'#efeae3' }}>{w.qty > 1 ? `${w.qty} × ` : '1 × '}{w.name}{w.vintage ? ` ${w.vintage}` : ''}{w.kind === 'extra' ? ' (extra)' : ''}</span>
+                              <span style={{ color:'var(--ink)' }}>{w.qty > 1 ? `${w.qty} × ` : '1 × '}{w.name}{w.vintage ? ` ${w.vintage}` : ''}{w.kind === 'extra' ? ' (extra)' : ''}</span>
                               {w.tasting_note ? <div className="muted" style={{ fontSize:13, marginTop:2 }}>{w.tasting_note}</div> : null}
                             </div>
                           ))}
