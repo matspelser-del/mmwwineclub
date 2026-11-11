@@ -60,10 +60,6 @@ export default function Account() {
     if (j.ok && j.outcome === 'done') { setMsg(`Your membership has been ${label === 'resume' ? 'resumed' : label + 'd'}.`); setMember((m) => ({ ...m, status: action === 'cancel' ? 'cancelled' : action === 'pause' ? 'paused' : 'active' })); }
     else setMsg(`Your ${label} request has been received. We'll confirm it shortly.`);
   }
-  async function toggleSkip(boxId, skip) {
-    setUpcoming((bs) => bs.map((b) => b.id === boxId ? { ...b, skipped: skip } : b));
-    await fetch('/api/member/skip', { method: 'POST', headers: { Authorization: `Bearer ${await freshToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ boxId, skip }) }).catch(() => {});
-  }
   function copyCode() {
     if (!member?.discount_code) return;
     navigator.clipboard?.writeText(member.discount_code);

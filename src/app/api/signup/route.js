@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/supabaseAdmin';
+import { lunchSeatsTaken, LUNCH_LIMIT } from '@/lib/seats';
 export const dynamic = 'force-dynamic';
 
 const TIERS = {
@@ -19,11 +20,11 @@ export async function POST(request) {
   const email = String(b.email).toLowerCase().trim();
   const db = admin();
 
-  // Lunch seat cap (33 total). Count seats already committed, excluding this email if re-trying.
-  const LUNCH_LIMIT = 33;
+  // Lunch seat cap. Counts active members AND unexpired holds from people currently
+  // paying (see lib/seats), so two people can't both pass the check on the last seat
+  // minutes apart. Excludes this email so a re-submit never blocks itself.
   if (t.tier === 'lunch') {
-    const { data: lunchRows } = await db.from('members').select('email,seats,status').eq('tier','lunch').in('status',['active']);
-    const taken = (lunchRows||[]).filter(r => r.email !== email).reduce((a,r)=> a + (Number(r.seats)||0), 0);
+    const taken = await lunchSeatsTaken(db, email);
     if (taken + t.seats > LUNCH_LIMIT) {
       const left = Math.max(0, LUNCH_LIMIT - taken);
       return NextResponse.json({ error: left === 0 ? 'The launch lunch is fully booked.' : `Only ${left} launch lunch seat${left===1?'':'s'} left, please choose fewer.` }, { status: 409 });
@@ -34,7 +35,7 @@ export async function POST(request) {
   // which keeps the member list free of non-payers and duplicates.
   const row = {
     email, name: b.name, phone: b.phone, plan: b.plan, tier: t.tier, seats: t.seats,
-    status: 'interested',
+    status: 'interested', pay_started_at: new Date().toISOString(),
     addr_line1: b.addr_line1, addr_line2: b.addr_line2 || null, city: b.city,
     province: b.province || null, postal_code: b.postal_code, country: b.country || 'South Africa',
   };

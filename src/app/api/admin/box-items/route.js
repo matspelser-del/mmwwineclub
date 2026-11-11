@@ -16,12 +16,15 @@ export async function PATCH(request){
   const patch={};
   for(const f of ['name','vintage','kind','producer','tasting_note']) if(f in b) patch[f]=b[f];
   for(const f of ['qty','cost_price','cellar_price']) if(f in b) patch[f]=Number(b[f])||0;
-  await admin().from('box_items').update(patch).eq('id',b.id);
+  const {error}=await admin().from('box_items').update(patch).eq('id',b.id);
+  if(error) return NextResponse.json({error:error.message},{status:400});
   return NextResponse.json({ok:true});
 }
 export async function DELETE(request){
   if(!(await gate(request))) return NextResponse.json({error:'forbidden'},{status:403});
   const id=new URL(request.url).searchParams.get('id');
-  await admin().from('box_items').delete().eq('id',id);
+  if(!id) return NextResponse.json({error:'id'},{status:400});
+  const {error}=await admin().from('box_items').delete().eq('id',id);
+  if(error) return NextResponse.json({error:error.message},{status:400});
   return NextResponse.json({ok:true});
 }

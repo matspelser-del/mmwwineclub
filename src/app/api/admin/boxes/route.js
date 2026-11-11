@@ -31,6 +31,7 @@ export async function PATCH(request){
   const patch={};
   for(const f of ['label','release_date','status','member_note','notes']) if(f in b) patch[f]=b[f]===''?null:b[f];
   if('delivery_fee' in b) patch.delivery_fee=Number(b.delivery_fee)||0;
-  await admin().from('boxes').update(patch).eq('id',b.id);
+  const {error}=await admin().from('boxes').update(patch).eq('id',b.id);
+  if(error) return NextResponse.json({error:error.message},{status:400});
   return NextResponse.json({ok:true});
 }

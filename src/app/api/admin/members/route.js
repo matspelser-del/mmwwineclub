@@ -15,7 +15,10 @@ export async function GET(request) {
   const since = new Date(Date.now() - 14 * 864e5).toISOString();
   const [m, p, e, itn, i] = await Promise.all([
     db.from('members').select('*').order('created_at', { ascending: false }),
-    db.from('payments').select('*').order('created_at', { ascending: false }).limit(100),
+    // Revenue (headline total + 6-month chart) is summed from this set on the client,
+    // so it must hold every completed payment, not just the newest 100. 1000 is the
+    // honest ceiling (Supabase's default max rows); past that, sum server-side.
+    db.from('payments').select('*').order('created_at', { ascending: false }).limit(1000),
     db.from('member_events').select('*').order('created_at', { ascending: false }).limit(100),
     db.from('itn_log').select('created_at,email,amount,result').neq('result', 'accepted').gte('created_at', since).order('created_at', { ascending: false }).limit(20),
     db.from('interests').select('*').eq('status', 'interested').order('created_at', { ascending: false }),
@@ -61,6 +64,7 @@ export async function DELETE(request) {       // remove a member
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-  await admin().from('members').delete().eq('id', id);
+  const { error } = await admin().from('members').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true });
 }
