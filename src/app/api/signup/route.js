@@ -19,8 +19,8 @@ export async function POST(request) {
   const email = String(b.email).toLowerCase().trim();
   const db = admin();
 
-  // Lunch seat cap (32 total). Count seats already committed, excluding this email if re-trying.
-  const LUNCH_LIMIT = 32;
+  // Lunch seat cap (33 total). Count seats already committed, excluding this email if re-trying.
+  const LUNCH_LIMIT = 33;
   if (t.tier === 'lunch') {
     const { data: lunchRows } = await db.from('members').select('email,seats,status').eq('tier','lunch').in('status',['active']);
     const taken = (lunchRows||[]).filter(r => r.email !== email).reduce((a,r)=> a + (Number(r.seats)||0), 0);

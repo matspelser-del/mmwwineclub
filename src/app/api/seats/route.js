@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/supabaseAdmin';
 export const dynamic = 'force-dynamic';
-export const LIMIT = 32;
+export const LIMIT = 33;
 
 export async function GET() {
   const db = admin();
