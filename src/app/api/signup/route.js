@@ -11,8 +11,11 @@ const TIERS = {
 
 export async function POST(request) {
   const b = await request.json();
-  const t = TIERS[b.plan]; 
+  const t = TIERS[b.plan];
   if (!t) return NextResponse.json({ error: 'bad plan' }, { status: 400 });
+  // Launch lunch is sold out - only the Club is open to new signups. Remove this
+  // block to reopen lunch (the seat-cap logic below still enforces the limit).
+  if (t.tier === 'lunch') return NextResponse.json({ error: 'The launch lunch is sold out. Please join the wine club.' }, { status: 409 });
   // required fields
   for (const f of ['name','email','phone','addr_line1','city','postal_code']) {
     if (!b[f] || !String(b[f]).trim()) return NextResponse.json({ error: `${f} required` }, { status: 400 });
