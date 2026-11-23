@@ -292,9 +292,9 @@ export default function Builder(){
             <L k="Card fee (3.4% + R2)" v={rand(calc.cc)} />
             <L k="Total cost" v={rand(calc.totalCost)} bold />
           </div>
-          <div style={{marginTop:16,padding:'16px 18px',borderRadius:12,background:calc.profit>=0?'var(--green-soft)':'var(--red-soft)',color:calc.profit>=0?'var(--green)':'var(--red)'}}>
-            <div style={{fontSize:13,fontWeight:600}}>Profit per box</div>
-            <div style={{fontSize:28,fontWeight:700,letterSpacing:'-.02em',marginTop:2}}>{rand(calc.profit)} <span style={{fontSize:14,fontWeight:600}}>({calc.margin.toFixed(0)}%)</span></div>
+          <div style={{marginTop:16,padding:'16px 18px',borderRadius:12,background:calc.profit>=0?'#141414':'var(--red)',color:'#fff'}}>
+            <div style={{fontSize:12,fontWeight:600,letterSpacing:'.1em',textTransform:'uppercase',color:calc.profit>=0?'var(--red-on-dark)':'rgba(255,255,255,.85)'}}>Profit per box</div>
+            <div style={{fontSize:30,fontWeight:800,letterSpacing:'-.03em',marginTop:4}}>{rand(calc.profit)} <span style={{fontSize:14,fontWeight:600,opacity:.8}}>({calc.margin.toFixed(0)}%)</span></div>
           </div>
           <p className="hint" style={{marginTop:12}}>Cellar-door value in the box: <b>{rand(calc.cellarValue)}</b> — what a member gets for their {rand(BOX_PRICE)}.</p>
 

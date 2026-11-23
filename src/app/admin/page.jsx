@@ -15,14 +15,14 @@ function Donut({ club, lunch }) {
   return (
     <div style={{display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
       <svg width="140" height="140" viewBox="0 0 140 140">
-        <circle cx="70" cy="70" r={R} fill="none" stroke="#efeae3" strokeWidth={sw}/>
-        {seg(club,0,'#5f7d49')}{seg(lunch,club,'#9e2b2b')}
-        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="700" fill="#1a1a1a" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
-        <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#77736e">active</text>
+        <circle cx="70" cy="70" r={R} fill="none" stroke="#ececec" strokeWidth={sw}/>
+        {seg(club,0,'#1a1a1a')}{seg(lunch,club,'#952B2A')}
+        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="700" fill="#141414" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
+        <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#6c6c6c">active</text>
       </svg>
       <div style={{display:'flex',flexDirection:'column',gap:12,minWidth:170}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#5f7d49'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(club/total*100):0}%</span></div>
-        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#9e2b2b'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(lunch/total*100):0}%</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#1a1a1a'}}/><span style={{color:'var(--muted)'}}>The Club</span><b style={{marginLeft:'auto'}}>{club}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(club/total*100):0}%</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,fontSize:14}}><span style={{width:11,height:11,borderRadius:3,background:'#952B2A'}}/><span style={{color:'var(--muted)'}}>Club + Lunch</span><b style={{marginLeft:'auto'}}>{lunch}</b><span className="sub" style={{width:40,textAlign:'right'}}>{total?Math.round(lunch/total*100):0}%</span></div>
       </div>
     </div>
   );
