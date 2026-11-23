@@ -214,9 +214,9 @@ export default function Builder(){
                     onChange={e=>setItems(it=>it.map(x=>x.id===r.id?{...x,vintage:e.target.value}:x))}
                     onBlur={e=>saveVintage(r.id,e.target.value)} /></div>
                 <div><span className="bi-lbl">From</span><span className="sub">{r.producer==='miles'?'Miles':r.producer==='other'?'Other':'—'}</span></div>
-                <div><span className="bi-lbl">Qty</span><input className="input" style={{padding:'7px 9px',width:56}} type="number" min="1" value={r.qty} onChange={e=>patchItem(r.id,{qty:Number(e.target.value)||1})} /></div>
-                <div className="bi-num"><span className="bi-lbl">Cost (R)</span><input className="input" style={{padding:'7px 9px',width:88,textAlign:'right'}} type="number" value={r.cost_price} onChange={e=>patchItem(r.id,{cost_price:Number(e.target.value)||0})} /></div>
-                <div className="bi-num"><span className="bi-lbl">Cellar (R)</span><input className="input" style={{padding:'7px 9px',width:88,textAlign:'right'}} type="number" value={r.cellar_price} onChange={e=>patchItem(r.id,{cellar_price:Number(e.target.value)||0})} /></div>
+                <div><span className="bi-lbl">Qty</span><input className="input sm" style={{width:56}} type="number" min="1" value={r.qty} onChange={e=>patchItem(r.id,{qty:Number(e.target.value)||1})} /></div>
+                <div className="bi-num"><span className="bi-lbl">Cost (R)</span><input className="input sm" style={{width:88,textAlign:'right'}} type="number" value={r.cost_price} onChange={e=>patchItem(r.id,{cost_price:Number(e.target.value)||0})} /></div>
+                <div className="bi-num"><span className="bi-lbl">Cellar (R)</span><input className="input sm" style={{width:88,textAlign:'right'}} type="number" value={r.cellar_price} onChange={e=>patchItem(r.id,{cellar_price:Number(e.target.value)||0})} /></div>
                 <button className="x bi-del" onClick={()=>delItem(r.id)} aria-label="Remove">×</button>
               </div>
             ))}
@@ -288,7 +288,7 @@ export default function Builder(){
             <L k="Wine cost" v={rand(calc.wineCost)} />
             {calc.extrasCost>0 && <L k="Extras" v={rand(calc.extrasCost)} />}
             <div className="row" style={{gridTemplateColumns:'1fr auto'}}><div className="muted">Delivery</div>
-              <div className="r"><input className="input" style={{padding:'4px 8px',width:84,textAlign:'right'}} type="number" value={box?.delivery_fee||0} onChange={e=>patchDelivery(e.target.value)} /></div></div>
+              <div className="r"><input className="input sm" style={{width:92,textAlign:'right'}} type="number" value={box?.delivery_fee||0} onChange={e=>patchDelivery(e.target.value)} /></div></div>
             <L k="Card fee (3.4% + R2)" v={rand(calc.cc)} />
             <L k="Total cost" v={rand(calc.totalCost)} bold />
           </div>

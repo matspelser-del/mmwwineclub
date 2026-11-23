@@ -17,7 +17,7 @@ function Donut({ club, lunch }) {
       <svg width="140" height="140" viewBox="0 0 140 140">
         <circle cx="70" cy="70" r={R} fill="none" stroke="#ececec" strokeWidth={sw}/>
         {seg(club,0,'#1a1a1a')}{seg(lunch,club,'#952B2A')}
-        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="700" fill="#141414" fontFamily="Montserrat, sans-serif" letterSpacing="-0.5">{total}</text>
+        <text x="70" y="68" textAnchor="middle" fontSize="26" fontWeight="700" fill="#141414" fontFamily="Work Sans, sans-serif" letterSpacing="-0.5">{total}</text>
         <text x="70" y="86" textAnchor="middle" fontSize="11" fill="#6c6c6c">active</text>
       </svg>
       <div style={{display:'flex',flexDirection:'column',gap:12,minWidth:170}}>
@@ -236,9 +236,9 @@ export default function AdminHome() {
         </div>
       </div>
 
-      <div className="seg flex-row mb-md">
-        <button className={tab==='members'?'btn':'btn ghost'} onClick={()=>setTab('members')}>Members ({members.length})</button>
-        <button className={tab==='interest'?'btn':'btn ghost'} onClick={()=>setTab('interest')}>Showed interest ({interests.length})</button>
+      <div className="seg mb-md" role="tablist" style={{width:'max-content',maxWidth:'100%'}}>
+        <button role="tab" aria-selected={tab==='members'} className={tab==='members'?'on':''} onClick={()=>setTab('members')}>Members ({members.length})</button>
+        <button role="tab" aria-selected={tab==='interest'} className={tab==='interest'?'on':''} onClick={()=>setTab('interest')}>Showed interest ({interests.length})</button>
       </div>
 
       {syncMsg && (
@@ -289,16 +289,16 @@ export default function AdminHome() {
       <input className="input search" placeholder="Search name, email, town, code…" value={q} onChange={(e)=>setQ(e.target.value)} />
 
       <div className="card subs">
-        <div className="rowh"><div>Member</div><div>Delivery address</div><div>Tier</div><div>Status</div><div>Next payment · code</div></div>
+        <div className="rowh"><div>Member</div><div>Tier</div><div>Status</div><div>Address</div><div>Next · code</div></div>
         {filtered.length === 0 ? <div className="empty">No members yet.</div> :
           filtered.map((m) => {
             const next = m.next_payment_date || (m.status==='active' ? nextQuarterly(m.start_date || m.created_at) : '');
             return (
             <div className="row" key={m.id} style={{ cursor:'pointer' }} onClick={()=>openEdit(m)}>
-              <div><div className="nm">{m.name}</div><div className="sub">{m.email}</div></div>
-              <div className="sub">{m.addr_line1 ? `${m.addr_line1}${m.addr_line2?', '+m.addr_line2:''}, ${m.city||''} ${m.postal_code||''}` : '— not provided —'}</div>
-              <div><span className={`badge ${m.tier==='lunch'?'red':'blue'}`}><span className="dot" />{m.tier==='lunch'?`Lunch ×${m.seats||1}`:'Club'}</span></div>
+              <div className="min0"><div className="nm">{m.name}</div><div className="sub">{m.email}</div></div>
+              <div><span className="badge grey"><span className="dot" />{m.tier==='lunch'?`Lunch ×${m.seats||1}`:'Club'}</span></div>
               <div><Badge v={m.status} /></div>
+              <div>{m.addr_line1 ? <span className="badge grey"><span className="dot" />Complete</span> : <span className="badge red"><span className="dot" />No address</span>}</div>
               <div className="sub">{next ? <>{shortDate(next)}{!m.next_payment_date && <span style={{opacity:.6}}> (est.)</span>}</> : '—'}<br/>{m.discount_code ? <span className="code">{m.discount_code}</span> : ''}</div>
             </div>
           );})}
@@ -313,7 +313,7 @@ export default function AdminHome() {
               <div className="row" key={i.id} style={{ cursor:'default' }}>
                 <div><div className="nm">{i.name||'—'}</div><div className="sub">{i.email}</div></div>
                 <div className="sub">{i.phone||'—'}</div>
-                <div><span className={`badge ${i.tier==='lunch'?'red':'blue'}`}><span className="dot" />{i.tier==='lunch'?`Lunch ×${i.seats||1}`:'Club'}</span></div>
+                <div><span className="badge grey"><span className="dot" />{i.tier==='lunch'?`Lunch ×${i.seats||1}`:'Club'}</span></div>
                 <div className="sub">{i.addr_line1 ? `${i.addr_line1}${i.addr_line2?', '+i.addr_line2:''}, ${i.city||''} ${i.postal_code||''}` : '— not provided —'}</div>
                 <div className="sub">{shortDate(i.created_at)}<br/>
                   <span style={{ display:'inline-flex', gap:6, marginTop:4, flexWrap:'wrap' }}>
@@ -336,19 +336,17 @@ export default function AdminHome() {
             <div className="r2"><L t="Name"><input className="input" value={form.name} onChange={(e)=>set('name',e.target.value)} /></L>
               <L t="Email"><input className="input" value={form.email} onChange={(e)=>set('email',e.target.value)} /></L></div>
             <div className="r2"><L t="Phone"><input className="input" value={form.phone} onChange={(e)=>set('phone',e.target.value)} /></L>
-              <L t="Status"><select className="select" value={form.status} onChange={(e)=>set('status',e.target.value)}>
-                <option value="active">Active</option><option value="pending">Pending</option><option value="paused">Paused</option><option value="cancelled">Cancelled</option></select></L></div>
+              <L t="Status"><div className="seg">
+                {['active','pending','paused','cancelled'].map(s=>(
+                  <button type="button" key={s} className={form.status===s?'on':''} onClick={()=>set('status',s)} style={{textTransform:'capitalize'}}>{s}</button>
+                ))}</div></L></div>
             <L t="Membership">
-              <select className="select"
-                value={form.tier==='club' ? 'club' : (Number(form.seats)>=2 ? 'lunch2' : 'lunch1')}
-                onChange={(e)=>{ const v=e.target.value;
-                  if(v==='club'){ set('tier','club'); set('seats',1); }
-                  else if(v==='lunch1'){ set('tier','lunch'); set('seats',1); }
-                  else { set('tier','lunch'); set('seats',2); } }}>
-                <option value="club">The Family Wine Club</option>
-                <option value="lunch1">Club + Launch Lunch (1 seat)</option>
-                <option value="lunch2">Club + Launch Lunch (2 seats)</option>
-              </select></L>
+              <div className="seg">
+                {[['club','The Club'],['lunch1','Club + Lunch ×1'],['lunch2','Club + Lunch ×2']].map(([v,lab])=>{
+                  const cur=form.tier==='club'?'club':(Number(form.seats)>=2?'lunch2':'lunch1');
+                  return <button type="button" key={v} className={cur===v?'on':''} onClick={()=>{ if(v==='club'){set('tier','club');set('seats',1);} else if(v==='lunch1'){set('tier','lunch');set('seats',1);} else {set('tier','lunch');set('seats',2);} }}>{lab}</button>;
+                })}
+              </div></L>
 
             <div className="grp">Delivery address</div>
             <L t="Address line 1"><input className="input" value={form.addr_line1} onChange={(e)=>set('addr_line1',e.target.value)} /></L>

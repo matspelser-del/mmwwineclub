@@ -111,7 +111,7 @@ export default function Boxes(){
                             <span style={{fontWeight:600}}>{w.name}{w.kind==='extra'?' (extra)':''}{w.vintage?` · ${w.vintage}`:''}</span>
                             <span className="sub">×{w.qty}</span>
                           </div>
-                          <input className="input" style={{marginTop:6,fontSize:13,padding:'7px 10px'}} placeholder="Tasting note (shown to members on the reveal)" defaultValue={w.tasting_note||''} onBlur={e=>patchItem(w.id,{tasting_note:e.target.value})} />
+                          <input className="input sm" style={{marginTop:6,width:'100%'}} placeholder="Tasting note (shown to members on the reveal)" defaultValue={w.tasting_note||''} onBlur={e=>patchItem(w.id,{tasting_note:e.target.value})} />
                         </div>
                       ))}</div>}
 

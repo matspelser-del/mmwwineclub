@@ -97,12 +97,12 @@ export default function Account() {
               </div>
             </div>
             {member.discount_code && (
-              <div className="dark-card between">
-                <span className="muted">Your member discount code</span>
-                <span className="flex-row">
-                  <span className="code">{member.discount_code}</span>
-                  <button className="btn ghost sm" onClick={copyCode} style={{ padding:'6px 14px' }}>{copied ? 'Copied' : 'Copy'}</button>
-                </span>
+              <div className="dark-card between" style={{ alignItems:'center' }}>
+                <div className="min0">
+                  <div className="field" style={{ marginBottom:4 }}>Your member discount code</div>
+                  <span className="code" style={{ fontSize:16, padding:'5px 12px', letterSpacing:'.04em' }}>{member.discount_code}</span>
+                </div>
+                <button className="btn ghost sm" onClick={copyCode}>{copied ? 'Copied' : 'Copy'}</button>
               </div>
             )}
 
