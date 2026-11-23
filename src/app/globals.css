@@ -266,3 +266,40 @@ input[type=number].input{appearance:textfield;-moz-appearance:textfield}
   .session-spinner,.btn-spinner{animation-duration:1.4s!important;animation-iteration-count:infinite!important}
   .spark i{height:var(--h)!important;animation:none!important}
 }
+
+/* ===== app-ui-craft revamp pass ===== */
+/* full-height uses dvh so mobile browser chrome doesn't clip the layout */
+.shell{min-height:100dvh}
+.sidebar{height:100dvh}
+.site,.center,.loader-full{min-height:100dvh}
+@media(max-width:860px){.sidebar{height:100dvh}}
+
+/* larger touch targets on primary actions */
+.btn{min-height:44px}
+.btn.sm{min-height:38px}
+
+/* press-sink: elements react on press and settle back (reduced-motion block above neutralises the movement) */
+.btn:active:not(:disabled){transform:translateY(0) scale(.97)}
+.wine-pick{transition:border-color .12s ease,background .12s ease,box-shadow .12s,transform .12s var(--ease-out)}
+.wine-pick:active{transform:scale(.985)}
+.stat:active{transform:translateY(-1px) scale(.995)}
+.boxcard-top:active{background:#f4ede6}
+.nav a:active{transform:scale(.98)}
+.x:active{transform:scale(.9)}
+
+/* segmented control - shows the options instead of hiding them in a dropdown */
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--grey-soft);border:1px solid var(--line);border-radius:var(--r-md);padding:4px}
+.seg button{flex:0 1 auto;border:none;background:none;color:var(--muted);font-weight:600;font-size:13px;padding:9px 15px;border-radius:10px;cursor:pointer;white-space:nowrap;min-height:40px;transition:color .15s ease,background .15s ease,transform .12s var(--ease-out)}
+.seg button:hover:not(.on){color:var(--ink)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--sh-sm)}
+.seg button:active{transform:scale(.96)}
+
+/* inline vintage editor in the box-builder rows: reads as text, becomes a field on hover/focus */
+.bi-vint{display:block;width:120px;max-width:100%;margin-top:3px;padding:3px 7px;font-size:12px;color:var(--muted);background:transparent;border:1px solid transparent;border-radius:7px;transition:border-color .12s ease,background .12s ease,color .12s ease,box-shadow .12s ease}
+.bi-vint::placeholder{color:var(--faint);font-style:italic}
+.bi-vint:hover:not(:focus){border-color:var(--line2);color:var(--ink)}
+.bi-vint:focus{outline:none;border-color:var(--red-bright);background:#fff;color:var(--ink);box-shadow:var(--focus)}
+@media(max-width:620px){.bi-vint{width:100%}}
+
+/* page skeletons */
+.page-skel{display:flex;flex-direction:column;gap:16px}

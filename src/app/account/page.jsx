@@ -67,7 +67,13 @@ export default function Account() {
   }
   async function signOut() { await supabase.auth.signOut(); router.replace('/login'); }
 
-  if (loading) return <div className="loader-full"><div className="session-spinner" /></div>;
+  if (loading) return (
+    <div className="site"><div className="panel page-skel">
+      <div className="skel" style={{ height: 128, borderRadius: 'var(--r-lg)' }} />
+      <div className="skel-card"><div className="skel" style={{ height: 16, width: 120 }} /><div className="skel" style={{ height: 40 }} /></div>
+      <div className="skel-card"><div className="skel" style={{ height: 16, width: 100 }} /><div className="skel" style={{ height: 40 }} /></div>
+    </div></div>
+  );
 
   return (
     <div className="site">

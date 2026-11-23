@@ -60,7 +60,11 @@ export default function Boxes(){
     setTimeline(t=>t.filter(x=>x.id!==id));
   }
 
-  if(loading) return <div className="loader-full" style={{minHeight:'50vh'}}><div className="session-spinner" /></div>;
+  if(loading) return (
+    <div className="boxgrid" style={{marginTop:8}}>
+      {[0,1,2].map(i=>(<div key={i} className="skel-card"><div className="skel" style={{height:18,width:170}} /><div className="skel" style={{height:44}} /></div>))}
+    </div>
+  );
 
   return (
     <>

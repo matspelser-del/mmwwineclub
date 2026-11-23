@@ -74,6 +74,12 @@ export default function Builder(){
     setItems(it=>it.map(x=>x.id===id?{...x,...patch}:x));
     await fetch('/api/admin/box-items',{method:'PATCH',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({id,...patch})});
   }
+  // Vintage edits live-update as you type, then persist on blur. Blank = no vintage (stored null).
+  async function saveVintage(id,v){
+    const vintage=v.trim()?v.trim():null;
+    setItems(it=>it.map(x=>x.id===id?{...x,vintage}:x));
+    await fetch('/api/admin/box-items',{method:'PATCH',headers:{Authorization:`Bearer ${await freshToken()}`,'Content-Type':'application/json'},body:JSON.stringify({id,vintage})});
+  }
   async function delItem(id){
     await fetch(`/api/admin/box-items?id=${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${await freshToken()}`}});
     setItems(it=>it.filter(x=>x.id!==id));
@@ -158,20 +164,35 @@ export default function Builder(){
       turnover:BOX_PRICE*n, totalCostAll:totalCost*n, totalProfit:profit*n};
   },[rows,box,members]);
 
-  if(loading) return <div className="loader-full" style={{minHeight:'50vh'}}><div className="session-spinner" /></div>;
+  if(loading) return (
+    <>
+      <div className="head"><h1>Box Builder</h1><p>Build a box, see the cost and the profit per member and across the club.</p></div>
+      <div className="builder">
+        <div className="builder-left">
+          <div className="skel-card"><div className="skel" style={{height:16,width:90}} /><div className="skel" style={{height:46}} /><div className="skel" style={{height:46}} /><div className="skel" style={{height:46}} /></div>
+          <div className="skel-card"><div className="skel" style={{height:16,width:110}} /><div className="skel" style={{height:42}} /><div className="skel" style={{height:42}} /></div>
+        </div>
+        <div className="skel-card"><div className="skel" style={{height:16,width:80}} /><div className="skel" style={{height:120}} /><div className="skel" style={{height:60}} /></div>
+      </div>
+    </>
+  );
 
   return (
     <>
       <div className="head"><h1>Box Builder</h1><p>Build a box, see the cost and the profit per member and across the club.</p></div>
 
-      <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:20,flexWrap:'wrap'}}>
-        <label className="field" style={{margin:0}}>Box</label>
-        <select className="select" style={{maxWidth:220}} value={boxId} onChange={e=>setBoxId(e.target.value)}>
-          {boxes.map(b=><option key={b.id} value={b.id}>{b.label}</option>)}
-        </select>
-        <label className="field" style={{margin:'0 0 0 16px'}}>Members for projection</label>
-        <input className="input" style={{width:90}} type="number" value={members} onChange={e=>setMembers(e.target.value)} />
-        <span className="hint">{activeMembers} active now</span>
+      <div style={{marginBottom:20}}>
+        <label className="field">Box</label>
+        <div className="seg" role="tablist" aria-label="Box" style={{marginBottom:14}}>
+          {boxes.map(b=>(
+            <button key={b.id} role="tab" aria-selected={b.id===boxId} className={b.id===boxId?'on':''} onClick={()=>setBoxId(b.id)}>{b.label}</button>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
+          <label className="field" style={{margin:0}}>Members for projection</label>
+          <input className="input" style={{width:90}} type="number" value={members} onChange={e=>setMembers(e.target.value)} />
+          <span className="hint">{activeMembers} active now</span>
+        </div>
       </div>
 
       <div className="builder">
@@ -187,7 +208,11 @@ export default function Builder(){
             {rows.length===0 && <div className="empty">Nothing added yet. Pick wines below.</div>}
             {rows.map(r=>(
               <div className="bi-row" key={r.id}>
-                <div className="bi-name"><div className="nm">{r.name}{r.kind==='extra'?' (extra)':''}</div><div className="sub">{r.vintage||''}</div></div>
+                <div className="bi-name">
+                  <div className="nm">{r.name}{r.kind==='extra'?' (extra)':''}</div>
+                  <input className="bi-vint" placeholder="No vintage" aria-label="Vintage" value={r.vintage||''}
+                    onChange={e=>setItems(it=>it.map(x=>x.id===r.id?{...x,vintage:e.target.value}:x))}
+                    onBlur={e=>saveVintage(r.id,e.target.value)} /></div>
                 <div><span className="bi-lbl">From</span><span className="sub">{r.producer==='miles'?'Miles':r.producer==='other'?'Other':'—'}</span></div>
                 <div><span className="bi-lbl">Qty</span><input className="input" style={{padding:'7px 9px',width:56}} type="number" min="1" value={r.qty} onChange={e=>patchItem(r.id,{qty:Number(e.target.value)||1})} /></div>
                 <div className="bi-num"><span className="bi-lbl">Cost (R)</span><input className="input" style={{padding:'7px 9px',width:88,textAlign:'right'}} type="number" value={r.cost_price} onChange={e=>patchItem(r.id,{cost_price:Number(e.target.value)||0})} /></div>
